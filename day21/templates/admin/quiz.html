@@ -1,0 +1,487 @@
+{% extends 'admin/base.html' %}
+{% block title %}题库管理{% endblock %}
+
+{% block extra_head %}
+<style>
+    .quiz-layout {
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+    }
+
+    .filter-bar {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 18px;
+        flex-wrap: wrap;
+    }
+    .filter-bar select,
+    .filter-bar input[type="text"] {
+        padding: 8px 14px;
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 10px;
+        font-size: 13px;
+        font-family: inherit;
+        background: rgba(255,255,255,0.04);
+        color: var(--text-primary);
+        outline: none;
+        transition: all 0.2s ease;
+    }
+    .filter-bar select { cursor: pointer; min-width: 140px; }
+    .filter-bar select:hover { border-color: rgba(255,255,255,0.2); }
+    .filter-bar select:focus,
+    .filter-bar input[type="text"]:focus { border-color: var(--primary); }
+    .filter-bar input[type="text"] {
+        width: 160px; flex: 1; max-width: 200px;
+    }
+    .filter-bar input[type="text"]::placeholder { color: var(--text-muted); }
+
+    .filter-tag {
+        display: inline-flex; align-items: center; gap: 6px;
+        background: linear-gradient(135deg, #6366f1, #8b5cf6);
+        color: #fff; padding: 5px 12px; border-radius: 8px;
+        font-size: 12px; font-weight: 600;
+    }
+    .filter-tag.type-tag { background: linear-gradient(135deg, #f59e0b, #d97706); }
+    .filter-tag a {
+        color: rgba(255,255,255,0.8); text-decoration: none;
+        margin-left: 2px; font-size: 16px; line-height: 1;
+        transition: color 0.2s ease;
+    }
+    .filter-tag a:hover { color: #fff; }
+
+    .q-table { width: 100%; }
+    .q-table th:nth-child(1) { width: 36px; }
+    .q-table th:nth-child(2) { width: 28px; }
+    .q-table th:nth-child(3) { width: 52px; }
+    .q-table td:nth-child(5) { max-width: 240px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    .type-badge {
+        display: inline-flex; align-items: center; gap: 3px;
+        font-weight: 700; font-size: 11px; padding: 3px 10px; border-radius: 6px;
+    }
+    .type-badge.choice {
+        background: rgba(99,102,241,0.12); color: #a5b4fc;
+        border: 1px solid rgba(99,102,241,0.2);
+    }
+    .type-badge.true_false {
+        background: rgba(245,158,11,0.12); color: #fbbf24;
+        border: 1px solid rgba(245,158,11,0.2);
+    }
+    .day-badge {
+        display: inline-flex; align-items: center; gap: 3px;
+        font-weight: 700; color: var(--primary-light);
+        background: rgba(99,102,241,0.1);
+        padding: 3px 8px; border-radius: 6px; font-size: 12px;
+    }
+    .answer-badge {
+        display: inline-flex; align-items: center; justify-content: center;
+        width: 28px; height: 28px; border-radius: 8px;
+        font-weight: 800; font-size: 12px;
+        background: rgba(16,185,129,0.15); color: var(--success);
+        border: 1px solid rgba(16,185,129,0.2);
+    }
+    .answer-badge.tf-true {
+        background: rgba(16,185,129,0.15); color: #34d399;
+    }
+    .answer-badge.tf-false {
+        background: rgba(248,113,113,0.15); color: #f87171;
+    }
+
+    .answer-row { display: flex; gap: 12px; align-items: center; }
+    .answer-row .opt-group { flex: 1; }
+
+    .tf-option-bar {
+        display: flex; gap: 10px; align-items: center;
+        background: rgba(245,158,11,0.08); border-radius: 10px;
+        padding: 12px 16px; margin-bottom: 14px;
+        color: #fbbf24; font-size: 13px;
+        border: 1px solid rgba(245,158,11,0.15);
+    }
+
+    .bulk-actions {
+        display: flex; align-items: center; gap: 8px;
+        margin-bottom: 12px;
+    }
+    .bulk-actions.hidden { display: none; }
+    .selected-count { font-size: 12px; color: var(--primary-light); font-weight: 600; }
+
+    .stats-row {
+        display: flex; gap: 12px; margin-bottom: 18px; flex-wrap: wrap;
+    }
+    .stat-pill {
+        background: rgba(255,255,255,0.04); border-radius: 10px;
+        padding: 10px 16px; border: 1px solid rgba(255,255,255,0.06);
+        display: flex; align-items: center; gap: 8px; font-size: 12px;
+    }
+    .stat-pill .val { font-weight: 800; font-size: 16px; color: var(--text-primary); }
+    .stat-pill .lbl { color: var(--text-muted); }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>题库管理</h1>
+    <div class="breadcrumb"><span>管理后台</span> / 题库管理{% if edit_q %} / <span>编辑题目</span>{% endif %}</div>
+</div>
+
+<div class="stats-row">
+    <div class="stat-pill">
+        <span class="val">{{ questions.count }}</span>
+        <span class="lbl">总题数</span>
+    </div>
+    {% if day_filter %}
+    <div class="stat-pill">
+        <span class="val">{{ questions|length }}</span>
+        <span class="lbl">第 {{ day_filter }} 天题目</span>
+    </div>
+    {% endif %}
+</div>
+
+{% if import_result %}
+<div class="card" style="background:rgba(16,185,129,0.08); border:1px solid rgba(16,185,129,0.2); margin-bottom:20px; animation: fadeIn 0.3s ease;">
+    <div style="display:flex; align-items:center; gap:10px;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:22px;height:22px;"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+        <div>
+            <strong style="color:var(--text-primary);">导入完成</strong>
+            <span style="color:var(--text-secondary); margin-left:8px;">
+                成功 <b style="color:#10B981;">{{ import_result.created }}</b> 题，
+                跳过 <b style="color:#F59E0B;">{{ import_result.skipped }}</b> 题
+                {% if import_result.errors %}
+                ，出错 <b style="color:#EF4444;">{{ import_result.errors|length }}</b> 条
+                {% endif %}
+            </span>
+        </div>
+    </div>
+    {% if import_result.errors %}
+    <div style="margin-top:10px; padding:10px; background:rgba(239,68,68,0.06); border-radius:8px; font-size:13px; color:var(--text-muted); max-height:120px; overflow-y:auto;">
+        {% for e in import_result.errors %}
+        <div style="line-height:1.7;">{{ e }}</div>
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>
+{% endif %}
+
+<div class="quiz-layout">
+
+    <!-- ===== TOP: Add / Edit Form (collapsible) ===== -->
+    <div class="card" id="formCard" style="display:{% if edit_q or not edit_q and request.GET.edit == '0' %}block{% else %}none{% endif %};">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+            <h2 style="margin:0; padding:0; border:none;">
+                {% if edit_q %}
+                {% if edit_q.q_type == 'true_false' %}编辑判断题{% else %}编辑选择题{% endif %} #{{ edit_q.id }}
+                {% else %}新增题目{% endif %}
+            </h2>
+            <button type="button" class="btn btn-outline btn-sm" onclick="hideForm()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px;"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                收起
+            </button>
+        </div>
+
+        <form method="post" id="quizForm">
+            {% csrf_token %}
+            {% if edit_q %}
+            <input type="hidden" name="id" value="{{ edit_q.id }}">
+            {% endif %}
+
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:14px;">
+                <div class="form-group" style="margin-bottom:0;">
+                    <label>题型</label>
+                    <select name="q_type" class="form-select" id="qTypeSel" onchange="toggleQuestionType()">
+                        <option value="choice" {% if edit_q and edit_q.q_type == 'choice' %}selected{% elif not edit_q %}selected{% endif %}>选择题</option>
+                        <option value="true_false" {% if edit_q and edit_q.q_type == 'true_false' %}selected{% endif %}>判断题</option>
+                    </select>
+                </div>
+                <div class="form-group" style="margin-bottom:0;">
+                    <label>对应天数</label>
+                    <input type="number" name="day" class="form-input" min="1" max="21"
+                           value="{{ edit_q.day|default:1 }}" required>
+                </div>
+                <div class="form-group" style="margin-bottom:0;">
+                    <label>正确答案</label>
+                    <select name="answer" class="form-select" id="answerSel">
+                        <option value="A" {% if edit_q and edit_q.answer == 'A' %}selected{% endif %}>
+                            {% if edit_q and edit_q.q_type == 'true_false' %}A - ✅ 正确{% else %}A{% endif %}
+                        </option>
+                        <option value="B" {% if edit_q and edit_q.answer == 'B' %}selected{% endif %}>
+                            {% if edit_q and edit_q.q_type == 'true_false' %}B - ❌ 错误{% else %}B{% endif %}
+                        </option>
+                        <option value="C" {% if edit_q and edit_q.answer == 'C' %}selected{% endif %} class="choice-only">C</option>
+                        <option value="D" {% if edit_q and edit_q.answer == 'D' %}selected{% endif %} class="choice-only">D</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>题目内容</label>
+                <textarea name="question" class="form-textarea" required placeholder="请输入题目内容…" rows="3">{{ edit_q.question|default:'' }}</textarea>
+            </div>
+
+            <!-- Choice options -->
+            <div id="choiceOptions" style="display:{% if edit_q and edit_q.q_type == 'true_false' %}none{% else %}block{% endif %};">
+                <div class="answer-row">
+                    <div class="form-group opt-group">
+                        <label>选项 A</label>
+                        <input type="text" name="option_a" class="form-input" value="{{ edit_q.option_a|default:'' }}" required>
+                    </div>
+                    <div class="form-group opt-group">
+                        <label>选项 B</label>
+                        <input type="text" name="option_b" class="form-input" value="{{ edit_q.option_b|default:'' }}" required>
+                    </div>
+                </div>
+                <div class="answer-row">
+                    <div class="form-group opt-group">
+                        <label>选项 C</label>
+                        <input type="text" name="option_c" class="form-input" value="{{ edit_q.option_c|default:'' }}">
+                    </div>
+                    <div class="form-group opt-group">
+                        <label>选项 D</label>
+                        <input type="text" name="option_d" class="form-input" value="{{ edit_q.option_d|default:'' }}">
+                    </div>
+                </div>
+            </div>
+
+            <!-- True/False note -->
+            <div id="tfNote" style="display:{% if edit_q and edit_q.q_type == 'true_false' %}block{% else %}none{% endif %};">
+                <div class="tf-option-bar">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                    判断题选项固定为：✅ A-正确、❌ B-错误
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>答案解析 <span class="form-hint">（选填）</span></label>
+                <textarea name="explanation" class="form-textarea" placeholder="解释为什么是这个答案…" rows="2">{{ edit_q.explanation|default:'' }}</textarea>
+            </div>
+
+            <div style="display:flex;gap:10px;justify-content:flex-end;">
+                <a href="{% url 'admin_quiz' %}{% if day_filter %}?day={{ day_filter }}{% endif %}" class="btn btn-outline">取消</a>
+                <button type="submit" class="btn btn-primary">
+                    {% if edit_q %}
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/></svg>
+                    保存修改
+                    {% else %}
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;"><polyline points="20 6 9 17 4 12"/></svg>
+                    添加题目
+                    {% endif %}
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- ===== BOTTOM: Question List ===== -->
+    <div>
+        <div class="card">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                <h2 style="margin:0; padding:0; border:none;">题目列表</h2>
+                <div style="display:flex;gap:8px;">
+                    <a href="?edit=0{% if day_filter %}&day={{ day_filter }}{% endif %}" class="btn btn-primary btn-sm">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                        新增题目
+                    </a>
+                    {% if request.user.userprofile.role == 'super_admin' %}
+                    <a href="?export=1" class="btn btn-outline btn-sm" title="导出Excel">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                        导出
+                    </a>
+                    <label class="btn btn-outline btn-sm" style="cursor:pointer;margin-bottom:0;" title="从Excel导入">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                        导入
+                        <form method="post" enctype="multipart/form-data" id="importForm" style="display:none;">
+                            {% csrf_token %}
+                            <input type="file" name="import_file" accept=".xlsx,.xls,.json" onchange="document.getElementById('importForm').submit();">
+                        </form>
+                    </label>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Filters -->
+            <form class="filter-bar" method="get" id="filterForm">
+                <select name="day" onchange="this.form.submit()">
+                    <option value="">全部天数</option>
+                    {% for di in day_info %}
+                    <option value="{{ di.day }}" {% if day_filter == di.day %}selected{% endif %}>
+                        第 {{ di.day }} 天 (选{{ di.choice_count }}判{{ di.tf_count }})
+                    </option>
+                    {% endfor %}
+                </select>
+                <select name="q_type" onchange="this.form.submit()">
+                    <option value="">全部题型</option>
+                    <option value="choice" {% if type_filter == 'choice' %}selected{% endif %}>选择题</option>
+                    <option value="true_false" {% if type_filter == 'true_false' %}selected{% endif %}>判断题</option>
+                </select>
+                <input type="text" name="search" placeholder="搜索题目内容…" value="{{ search|default:'' }}">
+                <button type="submit" class="btn btn-outline btn-sm">搜索</button>
+
+                {% if day_filter %}
+                <span class="filter-tag">第 {{ day_filter }} 天<a href="?{% if type_filter %}q_type={{ type_filter }}&{% endif %}{% if search %}search={{ search }}{% endif %}">&times;</a></span>
+                {% endif %}
+                {% if type_filter %}
+                <span class="filter-tag type-tag">{{ type_filter|yesno:"判断题,选择题" }}<a href="?{% if day_filter %}day={{ day_filter }}&{% endif %}{% if search %}search={{ search }}{% endif %}">&times;</a></span>
+                {% endif %}
+            </form>
+
+            {% if questions %}
+            <!-- Bulk Actions -->
+            <div class="bulk-actions hidden" id="bulkActions">
+                <span class="selected-count" id="selectedCount">已选 0 项</span>
+                <button class="btn btn-danger btn-sm" onclick="bulkDelete()">批量删除</button>
+            </div>
+
+            <table class="q-table">
+                <thead>
+                    <tr>
+                        <th><input type="checkbox" id="selectAll" onchange="toggleSelectAll()" style="cursor:pointer;"></th>
+                        <th>#</th>
+                        <th>题型</th>
+                        <th>Day</th>
+                        <th>题目</th>
+                        <th>答案</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for q in questions %}
+                    <tr>
+                        <td><input type="checkbox" class="q-checkbox" value="{{ q.id }}" onchange="updateBulkBar()"></td>
+                        <td style="color:var(--text-muted);font-weight:600;font-size:11px;">{{ q.id }}</td>
+                        <td>
+                            <span class="type-badge {{ q.q_type }}">
+                                {% if q.q_type == 'choice' %}选择{% else %}判断{% endif %}
+                            </span>
+                        </td>
+                        <td><span class="day-badge">D{{ q.day }}</span></td>
+                        <td title="{{ q.question }}" style="color:var(--text-primary);font-weight:500;">
+                            {% if q.q_type == 'true_false' %}
+                            <span style="color:#fbbf24;">[判断]</span>
+                            {% endif %}
+                            {{ q.question }}
+                        </td>
+                        <td>
+                            {% if q.q_type == 'true_false' %}
+                            {% if q.answer == 'A' %}
+                            <span class="answer-badge tf-true">✅</span>
+                            {% else %}
+                            <span class="answer-badge tf-false">❌</span>
+                            {% endif %}
+                            {% else %}
+                            <span class="answer-badge">{{ q.answer }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div style="display:flex; gap:4px;">
+                                <a href="?edit={{ q.id }}{% if day_filter %}&day={{ day_filter }}{% endif %}{% if type_filter %}&q_type={{ type_filter }}{% endif %}" class="btn btn-outline btn-sm" style="font-size:11px;padding:4px 10px;">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:11px;height:11px;"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                                    编辑
+                                </a>
+                                <a href="?delete={{ q.id }}{% if day_filter %}&day={{ day_filter }}{% endif %}{% if type_filter %}&q_type={{ type_filter }}{% endif %}" class="btn btn-danger btn-sm" style="font-size:11px;padding:4px 10px;" onclick="return confirm('确认删除这道题目吗？')">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:11px;height:11px;"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                                    删除
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="empty-state">
+                <div class="empty-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:48px;height:48px;opacity:0.3;"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                </div>
+                <p>{% if search or day_filter or type_filter %}没有匹配的题目{% else %}暂无题目数据{% endif %}</p>
+                <a href="?edit=0" class="btn btn-primary btn-sm" style="margin-top:12px;">添加第一道题</a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+</div>
+
+<script>
+    function hideForm() {
+        document.getElementById('formCard').style.display = 'none';
+        // Clear the edit query param without reloading
+        var url = new URL(window.location);
+        url.searchParams.delete('edit');
+        window.history.replaceState({}, '', url);
+    }
+
+    function toggleQuestionType() {
+        var type = document.getElementById('qTypeSel').value;
+        var isTF = type === 'true_false';
+        document.getElementById('choiceOptions').style.display = isTF ? 'none' : 'block';
+        document.getElementById('tfNote').style.display = isTF ? 'block' : 'none';
+
+        var ans = document.getElementById('answerSel');
+        // Hide C/D for true/false
+        for (var i = 0; i < ans.options.length; i++) {
+            var opt = ans.options[i];
+            if (opt.value === 'C' || opt.value === 'D') {
+                opt.style.display = isTF ? 'none' : '';
+            }
+        }
+        // Reset answer if it was C/D and switching to TF
+        if (isTF && (ans.value === 'C' || ans.value === 'D')) {
+            ans.value = 'A';
+        }
+    }
+
+    function toggleSelectAll() {
+        var all = document.getElementById('selectAll').checked;
+        document.querySelectorAll('.q-checkbox').forEach(function(cb) {
+            cb.checked = all;
+        });
+        updateBulkBar();
+    }
+
+    function updateBulkBar() {
+        var checked = document.querySelectorAll('.q-checkbox:checked');
+        var bar = document.getElementById('bulkActions');
+        var count = document.getElementById('selectedCount');
+        if (checked.length > 0) {
+            bar.classList.remove('hidden');
+            count.textContent = '已选 ' + checked.length + ' 项';
+        } else {
+            bar.classList.add('hidden');
+            document.getElementById('selectAll').checked = false;
+        }
+    }
+
+    function bulkDelete() {
+        var checked = document.querySelectorAll('.q-checkbox:checked');
+        if (checked.length === 0) return;
+        if (!confirm('确定要删除选中的 ' + checked.length + ' 道题目吗？此操作不可撤销。')) return;
+
+        var ids = [];
+        checked.forEach(function(cb) { ids.push(cb.value); });
+
+        var form = document.createElement('form');
+        form.method = 'get';
+        form.action = location.pathname;
+        ids.forEach(function(id) {
+            var inp = document.createElement('input');
+            inp.type = 'hidden';
+            inp.name = 'ids';
+            inp.value = id;
+            form.appendChild(inp);
+        });
+        var inp = document.createElement('input');
+        inp.type = 'hidden';
+        inp.name = 'bulk_delete';
+        inp.value = '1';
+        form.appendChild(inp);
+        document.body.appendChild(form);
+        form.submit();
+    }
+
+    // Initialize: trigger type toggle on load if editing
+    {% if edit_q %}
+    toggleQuestionType();
+    {% endif %}
+</script>
+{% endblock %}

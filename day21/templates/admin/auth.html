@@ -1,0 +1,239 @@
+{% extends 'admin/base.html' %}
+
+{% block title %}实名认证审核{% endblock %}
+
+{% block extra_head %}
+<style>
+    .user-avatar-cell {
+        width: 38px; height: 38px;
+        border-radius: 12px;
+        background: linear-gradient(135deg, #6366f1, #8b5cf6);
+        display: flex; align-items: center; justify-content: center;
+        color: white; font-size: 15px; font-weight: 700;
+        flex-shrink: 0;
+        box-shadow: 0 4px 12px rgba(99,102,241,0.3);
+    }
+
+    .auth-info-grid {
+        display: grid; grid-template-columns: 1fr 1fr; gap: 3px 16px;
+    }
+    .auth-info-grid .auth-field {
+        font-size: 13px; color: var(--text-secondary);
+    }
+    .auth-info-grid .auth-field .f-label {
+        color: var(--text-muted); font-size: 11px; font-weight: 600;
+    }
+
+    .checkin-ring {
+        width: 52px; height: 52px;
+        border-radius: 50%;
+        border: 3px solid rgba(99,102,241,0.2);
+        display: flex; flex-direction: column;
+        align-items: center; justify-content: center;
+        margin: 0 auto;
+        background: rgba(99,102,241,0.06);
+    }
+    .checkin-ring .cr-num { font-size: 18px; font-weight: 900; color: var(--primary-light); line-height: 1; }
+    .checkin-ring .cr-unit { font-size: 10px; color: var(--text-muted); }
+
+    .filter-tabs {
+        display: flex; gap: 6px;
+    }
+    .filter-tabs a {
+        padding: 7px 16px; border-radius: 8px; font-size: 12px; font-weight: 600;
+        text-decoration: none; transition: all 0.2s ease;
+    }
+
+    .reject-modal {
+        background: rgba(15,23,42,0.96);
+        backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 20px; padding: 28px;
+        width: 90%; max-width: 420px;
+        box-shadow: 0 24px 60px rgba(0,0,0,0.55);
+        animation: modalIn 0.25s ease;
+    }
+    @keyframes modalIn {
+        from { opacity: 0; transform: scale(0.95) translateY(-10px); }
+        to { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    .reject-modal h3 { font-size: 18px; font-weight: 700; color: var(--text-primary); margin-bottom: 16px; }
+</style>
+{% endblock %}
+
+{% block content %}
+    <div class="page-header">
+        <h1>实名认证审核</h1>
+        <div class="breadcrumb"><span>管理中心</span> / <span>用户管理</span> / 实名认证审核</div>
+    </div>
+
+    <div class="stats-row">
+        <div class="stat-card">
+            <div class="stat-icon orange">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            </div>
+            <div class="stat-info">
+                <div class="stat-num">{{ pending_count }}</div>
+                <div class="stat-label">待审核</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon green">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            </div>
+            <div class="stat-info">
+                <div class="stat-num">{{ approved_count }}</div>
+                <div class="stat-label">已通过</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon pink">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+            </div>
+            <div class="stat-info">
+                <div class="stat-num">{{ rejected_count }}</div>
+                <div class="stat-label">已拒绝</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon blue">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+            </div>
+            <div class="stat-info">
+                <div class="stat-num">{{ unverified_count }}</div>
+                <div class="stat-label">未认证</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
+            <h2 style="margin:0;padding:0;border:none;">认证列表</h2>
+            <div class="filter-tabs">
+                <a href="?status=" class="btn btn-sm {% if not status_filter %}btn-primary{% else %}btn-outline{% endif %}">全部</a>
+                <a href="?status=pending" class="btn btn-sm {% if status_filter == 'pending' %}btn-primary{% else %}btn-outline{% endif %}">待审核</a>
+                <a href="?status=approved" class="btn btn-sm {% if status_filter == 'approved' %}btn-success{% else %}btn-outline{% endif %}">已通过</a>
+                <a href="?status=rejected" class="btn btn-sm {% if status_filter == 'rejected' %}btn-danger{% else %}btn-outline{% endif %}">已拒绝</a>
+            </div>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>用户信息</th>
+                    <th>认证信息</th>
+                    <th>打卡情况</th>
+                    <th>状态</th>
+                    <th>审核时间</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in auth_data %}
+                <tr>
+                    <td>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <div class="user-avatar-cell">{{ item.profile.nickname|first }}</div>
+                            <div>
+                                <div style="font-weight: 600; color: var(--text-primary); font-size: 13px;">{{ item.profile.nickname }}</div>
+                                <div style="font-size: 12px; color: var(--text-muted); font-family: monospace;">{{ item.profile.phone }}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="auth-info-grid">
+                            <div class="auth-field"><span class="f-label">姓名</span> {{ item.profile.real_name|default:'-' }}</div>
+                            <div class="auth-field"><span class="f-label">学校</span> {{ item.profile.school|default:'-' }}</div>
+                            <div class="auth-field"><span class="f-label">班级</span> {{ item.profile.class_name|default:'-' }}</div>
+                            <div class="auth-field"><span class="f-label">身份证</span> {{ item.id_card_mask }}</div>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="checkin-ring">
+                            <div class="cr-num">{{ item.total_checkins }}</div>
+                            <div class="cr-unit">/21天</div>
+                        </div>
+                    </td>
+                    <td>
+                        {% if item.profile.auth_status == 'pending' %}
+                            <span class="badge badge-warning">待审核</span>
+                        {% elif item.profile.auth_status == 'approved' %}
+                            <span class="badge badge-success">已通过</span>
+                        {% elif item.profile.auth_status == 'rejected' %}
+                            <span class="badge badge-danger">已拒绝</span>
+                        {% else %}
+                            <span style="font-size:12px;color:var(--text-muted);">未认证</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if item.profile.auth_time %}
+                            <span style="color:var(--text-muted);font-size:12px;">{{ item.profile.auth_time|date:"Y-m-d H:i" }}</span>
+                        {% else %}
+                            <span style="color:var(--text-muted);">-</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if item.profile.auth_status == 'pending' %}
+                            <div style="display: flex; gap: 6px;">
+                                <form method="post" style="display: inline;">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="profile_id" value="{{ item.profile.id }}">
+                                    <input type="hidden" name="action" value="approve">
+                                    <button type="submit" class="btn btn-sm btn-success" onclick="return confirm('确定通过该用户的实名认证申请？')">通过</button>
+                                </form>
+                                <button class="btn btn-sm btn-danger" onclick="showRejectModal({{ item.profile.id }})">拒绝</button>
+                            </div>
+                        {% else %}
+                            {% if item.profile.auth_reason %}
+                                <div style="font-size: 12px; color: var(--warning); max-width: 140px; line-height: 1.4;">{{ item.profile.auth_reason }}</div>
+                            {% else %}
+                                <span style="color:var(--text-muted);font-size:12px;">-</span>
+                            {% endif %}
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6">
+                        <div class="empty-state">
+                            <div class="empty-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:48px;height:48px;opacity:0.3;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                            </div>
+                            <p>暂无数据</p>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div id="rejectModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.65); backdrop-filter: blur(6px); align-items: center; justify-content: center; z-index: 1000;">
+        <div class="reject-modal">
+            <h3>拒绝认证申请</h3>
+            <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="profile_id" id="rejectProfileId">
+                <input type="hidden" name="action" value="reject">
+                <div class="form-group">
+                    <label>拒绝原因 <span style="color: var(--danger);">*</span></label>
+                    <textarea name="reason" class="form-textarea" placeholder="请输入拒绝原因，将通知给用户" required></textarea>
+                </div>
+                <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                    <button type="button" class="btn btn-sm btn-outline" onclick="hideRejectModal()">取消</button>
+                    <button type="submit" class="btn btn-sm btn-danger">确认拒绝</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function showRejectModal(profileId) {
+            document.getElementById('rejectProfileId').value = profileId;
+            document.getElementById('rejectModal').style.display = 'flex';
+        }
+        function hideRejectModal() {
+            document.getElementById('rejectModal').style.display = 'none';
+        }
+    </script>
+{% endblock %}

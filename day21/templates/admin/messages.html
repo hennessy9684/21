@@ -1,0 +1,134 @@
+{% extends "admin/base.html" %}
+{% block title %}留言审核{% endblock %}
+
+{% block extra_head %}
+<style>
+    .msg-card {
+        background: rgba(255,255,255,0.03);
+        backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+        border-radius: 16px;
+        padding: 20px 24px;
+        margin-bottom: 12px;
+        border: 1px solid rgba(255,255,255,0.06);
+        display: flex;
+        gap: 16px;
+        transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
+    }
+    .msg-card:hover {
+        border-color: rgba(255,255,255,0.14);
+        box-shadow: 0 6px 24px rgba(0,0,0,0.2);
+        transform: translateY(-1px);
+    }
+    .msg-card.hidden-msg {
+        background: rgba(251,191,36,0.04);
+        border-color: rgba(251,191,36,0.15);
+    }
+
+    .msg-avatar {
+        width: 44px; height: 44px;
+        border-radius: 14px;
+        background: linear-gradient(135deg, #6366f1, #8b5cf6);
+        display: flex; align-items: center; justify-content: center;
+        font-size: 18px; font-weight: 700; color: #fff;
+        flex-shrink: 0;
+        box-shadow: 0 4px 12px rgba(99,102,241,0.3);
+    }
+
+    .msg-body { flex: 1; min-width: 0; }
+    .msg-body .msg-header {
+        display: flex; align-items: center; gap: 10px; margin-bottom: 6px;
+    }
+    .msg-body .msg-nickname {
+        font-weight: 700; font-size: 14px; color: var(--text-primary);
+    }
+    .msg-body .msg-time {
+        font-size: 11px; color: var(--text-muted);
+    }
+    .msg-body .msg-content {
+        font-size: 14px; color: var(--text-secondary);
+        line-height: 1.6; word-break: break-word;
+    }
+    .msg-body .msg-content.hidden-text { color: var(--warning); }
+
+    .msg-actions {
+        display: flex; align-items: center; gap: 8px; flex-shrink: 0;
+    }
+    .msg-meta {
+        display: flex; align-items: center; gap: 18px; margin-top: 8px;
+    }
+    .msg-meta .meta-item {
+        font-size: 11px; color: var(--text-muted);
+        display: flex; align-items: center; gap: 4px;
+    }
+    .msg-meta .meta-item svg {
+        width: 14px; height: 14px; opacity: 0.6;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>留言审核</h1>
+    <div class="breadcrumb"><span>首页</span> / 留言审核</div>
+</div>
+
+{% if messages %}
+    {% for item in messages %}
+    {% with m=item.message %}
+    <div class="msg-card {% if '[已隐藏]' in m.content %}hidden-msg{% endif %}">
+        <div class="msg-avatar">{{ item.nickname|first|upper }}</div>
+        <div class="msg-body">
+            <div class="msg-header">
+                <span class="msg-nickname">{{ item.nickname }}</span>
+                <span class="msg-time">{{ m.created_at|date:"Y-m-d H:i" }}</span>
+            </div>
+            <div class="msg-content {% if '[已隐藏]' in m.content %}hidden-text{% endif %}">
+                {{ m.content }}
+            </div>
+            <div class="msg-meta">
+                <span class="meta-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+                    {{ m.like_count }} 赞
+                </span>
+                <span class="meta-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                    {{ m.reply_count }} 回复
+                </span>
+            </div>
+        </div>
+        <div class="msg-actions">
+            {% if '[已隐藏]' not in m.content %}
+            <form method="POST" action="{% url 'admin_messages' %}" style="display:inline;">
+                {% csrf_token %}
+                <input type="hidden" name="id" value="{{ m.id }}">
+                <input type="hidden" name="action" value="hide">
+                <button type="submit" class="btn btn-warning btn-sm">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><line x1="1" y1="1" x2="23" y2="23"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/></svg>
+                    隐藏
+                </button>
+            </form>
+            {% endif %}
+            <form method="POST" action="{% url 'admin_messages' %}" style="display:inline;" onsubmit="return confirm('确定要删除这条留言吗？');">
+                {% csrf_token %}
+                <input type="hidden" name="id" value="{{ m.id }}">
+                <input type="hidden" name="action" value="delete">
+                <button type="submit" class="btn btn-danger btn-sm">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                    删除
+                </button>
+            </form>
+        </div>
+    </div>
+    {% endwith %}
+    {% endfor %}
+{% else %}
+<div class="card">
+    <div class="empty-state">
+        <div class="empty-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:48px;height:48px;opacity:0.3;"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        </div>
+        <p>暂无留言，一切安静</p>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

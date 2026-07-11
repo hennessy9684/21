@@ -1,0 +1,365 @@
+{% extends "admin/base.html" %}
+{% block title %}用户管理{% endblock %}
+
+{% block extra_head %}
+<style>
+    .toolbar {
+        display: flex; justify-content: space-between; align-items: center;
+        margin-bottom: 18px; gap: 10px; flex-wrap: wrap;
+    }
+    .toolbar .count { font-size: 12px; color: var(--text-secondary); font-weight: 600; }
+
+    .search-box { position: relative; display: inline-block; }
+    .search-box svg {
+        position: absolute; left: 10px; top: 50%; transform: translateY(-50%);
+        width: 14px; height: 14px; color: var(--text-muted); pointer-events: none;
+    }
+    .search-box input {
+        padding: 8px 12px 8px 36px; border: 1.5px solid var(--glass-border);
+        border-radius: var(--radius-sm, 10px);
+        font-size: 12px; font-family: inherit; color: var(--text-primary);
+        background: rgba(255,255,255,0.05); outline: none; width: 200px;
+        transition: all 0.15s;
+    }
+    .search-box input:focus {
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.08);
+    }
+    .search-box input::placeholder { color: var(--text-muted); }
+
+    .user-cell { display: flex; align-items: center; gap: 8px; }
+    .user-avatar {
+        width: 30px; height: 30px;
+        background: linear-gradient(135deg, var(--primary) 0%, #ec4899 100%);
+        color: #fff; border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 12px; font-weight: 800; flex-shrink: 0;
+        box-shadow: 0 3px 10px rgba(139, 92, 246, 0.2);
+    }
+    .user-name { font-weight: 600; color: var(--text-primary); font-size: 13px; }
+
+    .rank-badge {
+        display: inline-flex; align-items: center; justify-content: center;
+        width: 22px; height: 22px; border-radius: 50%;
+        font-size: 10px; font-weight: 800;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+    }
+    .rank-gold { background: linear-gradient(135deg, #fcd34d 0%, #f59e0b 100%); color: #fff; }
+    .rank-silver { background: linear-gradient(135deg, #e5e7eb 0%, #9ca3af 100%); color: #fff; }
+    .rank-bronze { background: linear-gradient(135deg, #fdba74 0%, #b45309 100%); color: #fff; }
+    .rank-normal { color: var(--text-muted); font-weight: 600; font-size: 11px; }
+
+    .progress { display: flex; align-items: center; gap: 8px; }
+    .progress .bar {
+        width: 80px; height: 8px; background: rgba(255,255,255,0.08);
+        border-radius: 4px; overflow: hidden;
+    }
+    .progress .bar .fill { height: 100%; border-radius: 4px; transition: width 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
+    .progress .bar .fill.high { background: linear-gradient(90deg, #10b981 0%, #059669 100%); }
+    .progress .bar .fill.mid  { background: linear-gradient(90deg, #6366f1 0%, #8b5cf6 100%); }
+    .progress .bar .fill.low  { background: linear-gradient(90deg, #fbbf24 0%, #d97706 100%); }
+    .progress .text { font-size: 11px; font-weight: 600; color: var(--text-muted); min-width: 22px; text-align: right; }
+
+    .streak-badge { font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 12px; }
+    .streak-badge.complete { background: rgba(16,185,129,0.15); color: #34d399; }
+    .streak-badge.active { background: rgba(245,158,11,0.15); color: #fbbf24; }
+    .streak-badge.normal { background: rgba(99,102,241,0.15); color: #a5b4fc; }
+
+    .footer-bar {
+        margin-top: 18px; padding-top: 14px;
+        border-top: 1.5px solid var(--glass-border);
+        display: flex; justify-content: flex-end; align-items: center; gap: 8px;
+    }
+
+    .import-modal-overlay {
+        display: none; position: fixed; inset: 0;
+        background: rgba(0,0,0,0.6); backdrop-filter: blur(4px);
+        z-index: 1000; align-items: center; justify-content: center;
+    }
+    .import-modal-overlay.show { display: flex; }
+    .import-modal {
+        background: rgba(15,23,42,0.95);
+        backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 20px; padding: 32px;
+        width: 90%; max-width: 480px;
+        box-shadow: 0 25px 60px rgba(0,0,0,0.5);
+    }
+    .import-modal h3 { font-size: 18px; font-weight: 700; color: #f8fafc; margin-bottom: 8px; }
+    .import-modal .subtitle { font-size: 13px; color: #94a3b8; margin-bottom: 20px; }
+    .import-modal .file-upload-area {
+        border: 2px dashed rgba(255,255,255,0.15);
+        border-radius: 14px; padding: 30px; text-align: center;
+        cursor: pointer; transition: all 0.2s ease;
+        margin-bottom: 20px;
+    }
+    .import-modal .file-upload-area:hover {
+        border-color: #818cf8; background: rgba(99,102,241,0.05);
+    }
+    .import-modal .file-upload-area svg { width: 40px; height: 40px; color: #94a3b8; margin-bottom: 10px; }
+    .import-modal .file-upload-area .upload-text { font-size: 14px; color: #94a3b8; }
+    .import-modal .file-upload-area .upload-hint { font-size: 12px; color: #64748b; margin-top: 4px; }
+    .import-modal input[type="file"] { display: none; }
+    .import-modal .file-name { font-size: 13px; color: #a5b4fc; margin-top: 8px; }
+
+    .import-result { padding: 14px 18px; border-radius: 10px; margin-bottom: 16px; font-size: 13px; }
+    .import-result.success { background: rgba(16,185,129,0.15); color: #34d399; border: 1px solid rgba(16,185,129,0.2); }
+    .import-result.error { background: rgba(248,113,113,0.15); color: #f87171; border: 1px solid rgba(248,113,113,0.2); }
+    .import-result .detail { font-size: 12px; margin-top: 6px; max-height: 150px; overflow-y: auto; }
+
+    .btn-toggle {
+        font-size: 10px; font-weight: 600; padding: 3px 10px; border-radius: 6px;
+        text-decoration: none; transition: all 0.15s; cursor: pointer;
+        display: inline-flex; align-items: center; gap: 2px;
+    }
+    .btn-toggle.active {
+        background: rgba(16,185,129,0.15); color: #34d399;
+        border: 1px solid rgba(16,185,129,0.25);
+    }
+    .btn-toggle.active:hover { background: rgba(16,185,129,0.3); }
+    .btn-toggle.disabled {
+        background: rgba(248,113,113,0.15); color: #f87171;
+        border: 1px solid rgba(248,113,113,0.25);
+    }
+    .btn-toggle.disabled:hover { background: rgba(248,113,113,0.3); }
+    .btn-toggle.reset {
+        background: rgba(251,191,36,0.12); color: #fbbf24;
+        border: 1px solid rgba(251,191,36,0.2);
+    }
+    .btn-toggle.reset:hover { background: rgba(251,191,36,0.25); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>用户管理</h1>
+    <div class="breadcrumb">Dashboard / Users</div>
+</div>
+
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="icon-box icon-purple">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/></svg>
+        </div>
+        <div>
+            <div class="number">{{ total_users }}</div>
+            <div class="label">参与者总数</div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="icon-box icon-mint">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+        </div>
+        <div>
+            <div class="number">{{ completed_21 }}</div>
+            <div class="label">完成全部 21 天</div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="icon-box icon-pink">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+        </div>
+        <div>
+            <div class="number">{{ active_streak }}</div>
+            <div class="label">连续打卡 7 天+</div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="icon-box icon-blue">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        </div>
+        <div>
+            <div class="number">{{ checked_today }}</div>
+            <div class="label">今日已打卡</div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+
+    {% if import_success %}
+    <div class="import-result success">
+        {{ import_success }}
+        {% if import_errors %}
+        <div class="detail">
+            {% for e in import_errors %}<div>{{ e }}</div>{% endfor %}
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+    {% if import_error %}
+    <div class="import-result error">{{ import_error }}</div>
+    {% endif %}
+
+    <div class="toolbar">
+        <div class="count">共 {{ total_users }} 位参与者</div>
+        <div class="search-box">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" id="searchInput" placeholder="搜索昵称或手机号" oninput="filterTable()">
+        </div>
+    </div>
+
+    <table id="userTable">
+        <thead>
+            <tr>
+                <th style="width:44px;">排名</th>
+                <th>用户</th>
+                <th>手机号</th>
+                <th>年级</th>
+                <th>打卡进度</th>
+                <th>连续天数</th>
+                <th>最后打卡</th>
+                {% if is_super_admin %}<th style="width:100px;">操作</th>{% endif %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in users_data %}
+            {% with p=item.profile %}
+            <tr data-search="{{ p.nickname|lower }} {{ p.phone }}">
+                <td>
+                    {% if forloop.counter == 1 %}
+                    <span class="rank-badge rank-gold">1</span>
+                    {% elif forloop.counter == 2 %}
+                    <span class="rank-badge rank-silver">2</span>
+                    {% elif forloop.counter == 3 %}
+                    <span class="rank-badge rank-bronze">3</span>
+                    {% else %}
+                    <span class="rank-normal">{{ forloop.counter }}</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <div class="user-cell">
+                        <div class="user-avatar">{{ p.nickname|first|upper }}</div>
+                        <span class="user-name">{{ p.nickname }}</span>
+                    </div>
+                </td>
+                <td style="color:var(--text-muted);font-size:11px;">{{ p.phone }}</td>
+                <td style="font-size:11px;">{{ p.grade|default:'—' }}</td>
+                <td>
+                    {% widthratio item.total_checkins 21 100 as pct %}
+                    <div class="progress">
+                        <div class="bar">
+                            <div class="fill
+                                {% if pct|add:0 >= 80 %}high
+                                {% elif pct|add:0 >= 40 %}mid
+                                {% else %}low{% endif %}
+                            " style="width:{{ pct }}%;"></div>
+                        </div>
+                        <span class="text">{{ item.total_checkins }}</span>
+                    </div>
+                </td>
+                <td>
+                    {% if item.streak_days >= 21 %}
+                    <span class="streak-badge complete">21 天</span>
+                    {% elif item.streak_days >= 7 %}
+                    <span class="streak-badge active">{{ item.streak_days }} 天</span>
+                    {% else %}
+                    <span class="streak-badge normal">{{ item.streak_days }} 天</span>
+                    {% endif %}
+                </td>
+                <td style="color:var(--text-muted);font-size:11px;">{{ item.last_checkin_date }}</td>
+                {% if is_super_admin %}
+                <td>
+                    <div style="display:flex;gap:4px;align-items:center;">
+                        {% if p.user.is_active %}
+                        <a href="{% url 'admin_toggle_user' p.id %}" class="btn-toggle active" title="点击禁用" onclick="return confirm('确定要禁用该账号吗？')">启用</a>
+                        {% else %}
+                        <a href="{% url 'admin_toggle_user' p.id %}" class="btn-toggle disabled" title="点击启用" onclick="return confirm('确定要启用该账号吗？')">禁用</a>
+                        {% endif %}
+                        <a href="{% url 'admin_reset_password' p.id %}" class="btn-toggle reset" title="重置为123456" onclick="return confirm('确定要重置密码为 123456 吗？')">重置</a>
+                    </div>
+                </td>
+                {% endif %}
+            </tr>
+            {% endwith %}
+            {% empty %}
+            <tr>
+                <td colspan="{% if is_super_admin %}8{% else %}7{% endif %}">
+                    <div class="empty-state">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+                        <p>暂无参与者数据</p>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="footer-bar">
+        <span style="font-size:11px;color:var(--text-muted);margin-right:auto;">{{ total_users }} 条记录</span>
+        <a href="{% url 'admin_export_checkins' %}" class="btn btn-primary btn-sm" style="margin-right:4px;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            导出打卡 Excel
+        </a>
+        <button class="btn btn-primary btn-sm" onclick="showImportModal()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            导入 Excel
+        </button>
+        <a href="?export=csv" class="btn btn-outline btn-sm">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            导出 CSV
+        </a>
+    </div>
+</div>
+
+<div class="import-modal-overlay" id="importModal">
+    <div class="import-modal">
+        <h3>批量导入用户</h3>
+        <div class="subtitle">上传 Excel 文件自动注册用户账号</div>
+
+        <form id="importForm" method="post" action="{% url 'admin_import_users' %}" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="file-upload-area" id="fileUploadArea" onclick="document.getElementById('importFile').click()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                <div class="upload-text">点击选择 Excel 文件</div>
+                <div class="upload-hint">支持 .xlsx / .xls 格式</div>
+                <div class="file-name" id="fileNameEl"></div>
+            </div>
+            <input type="file" name="file" id="importFile" accept=".xlsx,.xls" onchange="handleFileSelect(event)" required>
+
+            <div style="font-size:12px;color:#64748b;margin-bottom:18px;line-height:1.6;">
+                <div>Excel 表头格式：<strong>学校 | 真实姓名 | 电话号</strong></div>
+                <div>导入后自动注册，默认密码：<strong>123456</strong></div>
+            </div>
+
+            <div style="display:flex;gap:10px;justify-content:flex-end;">
+                <button type="button" class="btn btn-sm btn-outline" onclick="hideImportModal()">取消</button>
+                <button type="submit" class="btn btn-sm btn-primary" id="importSubmitBtn">开始导入</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function filterTable() {
+    var query = document.getElementById('searchInput').value.toLowerCase().trim();
+    document.querySelectorAll('#userTable tbody tr').forEach(function(row) {
+        var data = row.getAttribute('data-search');
+        row.style.display = !query || (data && data.indexOf(query) >= 0) ? '' : 'none';
+    });
+}
+
+function showImportModal() {
+    document.getElementById('importModal').classList.add('show');
+    document.getElementById('importFile').value = '';
+    document.getElementById('fileNameEl').textContent = '';
+}
+
+function hideImportModal() {
+    document.getElementById('importModal').classList.remove('show');
+}
+
+function handleFileSelect(event) {
+    var file = event.target.files[0];
+    document.getElementById('fileNameEl').textContent = file ? '已选择：' + file.name : '';
+}
+
+document.getElementById('importModal').addEventListener('click', function(e) {
+    if (e.target === this) hideImportModal();
+});
+
+{% if import_success or import_error %}
+showImportModal();
+{% endif %}
+</script>
+{% endblock %}
