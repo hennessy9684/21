@@ -2,6 +2,5 @@ django>=4.2,<5.0
 djangorestframework>=3.14
 django-cors-headers>=4.0
 openpyxl>=3.1
-simpleui>=2024.1
 Pillow>=10.0
 waitress>=2.1
