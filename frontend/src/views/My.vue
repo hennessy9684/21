@@ -385,7 +385,7 @@ onMounted(() => {
 <style scoped>
 .my-page {
   min-height: 100vh;
-  background: linear-gradient(180deg, #f0f4ff 0%, #fdf2f8 40%, #f0fdf4 100%);
+  background: linear-gradient(180deg, #87CEEB 0%, #E0F4FF 40%, #F0FDF4 100%);
   padding-bottom: 80px;
   font-family: -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif;
 }
@@ -396,7 +396,7 @@ onMounted(() => {
   align-items: center;
   gap: 14px;
   padding: 20px 16px;
-  background: linear-gradient(135deg, #667eea, #764ba2);
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
   color: white;
 }
 .header-avatar { font-size: 48px; }
@@ -431,8 +431,8 @@ onMounted(() => {
   transition: all 0.2s;
 }
 .tab-item.active {
-  background: #f0f4ff;
-  color: #667eea;
+  background: #eff6ff;
+  color: #3b82f6;
   font-weight: 700;
 }
 .tab-item span:first-child { font-size: 16px; }
@@ -441,10 +441,10 @@ onMounted(() => {
 .tab-content { padding: 12px 16px; }
 .panel {
   background: white;
-  border-radius: 18px;
+  border-radius: 20px;
   padding: 18px;
   margin-bottom: 14px;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.08);
 }
 .panel-title {
   font-size: 15px;
@@ -478,7 +478,7 @@ onMounted(() => {
   background: #fafbfd;
   transition: border-color 0.2s;
 }
-.field-input:focus { border-color: #667eea; }
+.field-input:focus { border-color: #3b82f6; }
 .field-input:disabled { background: #f0f0f0; color: #999; }
 
 /* Avatar Grid */
@@ -501,8 +501,8 @@ onMounted(() => {
   transition: all 0.2s;
 }
 .avatar-option.selected {
-  border-color: #667eea;
-  background: #f0f4ff;
+  border-color: #3b82f6;
+  background: #eff6ff;
   transform: scale(1.1);
 }
 
@@ -524,14 +524,14 @@ onMounted(() => {
   color: #888;
 }
 .gender-btn.selected {
-  border-color: #667eea;
-  background: #f0f4ff;
-  color: #667eea;
+  border-color: #3b82f6;
+  background: #eff6ff;
+  color: #3b82f6;
 }
 
 .btn-save {
   width: 100%;
-  background: linear-gradient(135deg, #667eea, #764ba2);
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
   color: white;
   border: none;
   padding: 14px;
@@ -561,7 +561,7 @@ onMounted(() => {
   flex-direction: column;
   align-items: center;
 }
-.bs-num { font-size: 24px; font-weight: 900; color: #667eea; }
+.bs-num { font-size: 24px; font-weight: 900; color: #3b82f6; }
 .bs-label { font-size: 11px; color: #888; margin-top: 2px; }
 .badge-progress {
   height: 8px;
@@ -571,7 +571,7 @@ onMounted(() => {
 }
 .badge-progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, #f9ca24, #e84393);
+  background: linear-gradient(90deg, #3b82f6, #22c55e);
   border-radius: 8px;
   transition: width 0.8s;
 }
@@ -587,7 +587,7 @@ onMounted(() => {
   padding: 14px 8px;
   text-align: center;
 }
-.badge-card.unlocked { background: linear-gradient(135deg, #fff9e6, #fff0f5); }
+.badge-card.unlocked { background: linear-gradient(135deg, #eff6ff, #f0fff4); }
 .badge-icon {
   font-size: 36px;
   display: block;
@@ -637,7 +637,7 @@ onMounted(() => {
   transition: 0.3s;
   box-shadow: 0 1px 4px rgba(0,0,0,0.15);
 }
-.toggle-switch input:checked + .toggle-slider { background: #667eea; }
+.toggle-switch input:checked + .toggle-slider { background: #3b82f6; }
 .toggle-switch input:checked + .toggle-slider::after { left: 23px; }
 
 .settings-btn {
@@ -689,7 +689,7 @@ onMounted(() => {
   box-sizing: border-box;
   font-family: inherit;
 }
-.feedback-input:focus { border-color: #667eea; }
+.feedback-input:focus { border-color: #3b82f6; }
 .modal-actions {
   display: flex;
   gap: 10px;
@@ -705,7 +705,7 @@ onMounted(() => {
   border: none;
 }
 .modal-btn.cancel { background: #f5f5f5; color: #888; }
-.modal-btn.confirm { background: linear-gradient(135deg, #667eea, #764ba2); color: white; }
+.modal-btn.confirm { background: linear-gradient(135deg, #3b82f6, #2563eb); color: white; }
 .modal-btn.confirm:disabled { opacity: 0.5; }
 .feedback-ok { text-align: center; color: #2ed573; font-size: 13px; margin: 10px 0 0; }
 
@@ -735,7 +735,7 @@ onMounted(() => {
   cursor: pointer;
   padding: 5px 12px;
 }
-.nav-item.active { color: #667eea; font-weight: 700; }
+.nav-item.active { color: #3b82f6; font-weight: 700; }
 .nav-item span:first-child { font-size: 20px; }
 
 /* 实名认证卡片 */
@@ -785,7 +785,7 @@ onMounted(() => {
 }
 .auth-btn {
   width: 100%;
-  background: linear-gradient(135deg, #667eea, #764ba2);
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
   color: white;
   border: none;
   padding: 12px;

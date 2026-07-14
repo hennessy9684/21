@@ -1,17 +1,15 @@
 <template>
   <div class="checkin-page">
-    <!-- 顶部返回栏 -->
     <header class="top-bar">
       <button class="btn-back" @click="goHome">
-        <span>←</span><span>返回首页</span>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M19 12H5M12 19l-7-7 7-7"/>
+        </svg>
       </button>
-      <div class="top-user">
-        <span class="user-avatar">{{ userAvatar }}</span>
-        <span class="user-name">{{ userName }}</span>
-      </div>
+      <h1 class="page-title">21天健康用网打卡</h1>
+      <button class="btn-rules" @click="router.push('/rules')">打卡规则</button>
     </header>
 
-    <!-- 提交成功弹窗 -->
     <div v-if="submitted" class="success-overlay" @click.self="goHome">
       <div class="success-modal">
         <div class="confetti-container">
@@ -44,7 +42,6 @@
       </div>
     </div>
 
-    <!-- 查看已完成的打卡 -->
     <div v-else-if="viewingRecord" class="done-view">
       <div class="done-card">
         <div class="done-header">
@@ -80,269 +77,299 @@
       </div>
     </div>
 
-    <!-- 21天网格 + 问卷 -->
     <div v-else>
-      <!-- 进度条 -->
-      <div class="progress-section">
-        <div class="progress-info">
-          <span>打卡进度</span>
-          <span class="progress-num">{{ stats.total_days }}/21</span>
-        </div>
-        <div class="progress-bar">
-          <div class="progress-fill" :style="{ width: stats.progress + '%' }"></div>
-        </div>
-      </div>
-
-      <!-- 21天网格 -->
-      <div class="grid-section">
-        <h2 class="section-title">📅 21天进度</h2>
-        <div class="day-grid">
-          <div
-            v-for="topic in topics"
-            :key="topic.day"
-            class="day-card"
-            :class="{
-              done: checkins[topic.day],
-              active: currentDay === topic.day && !checkins[topic.day],
-              locked: topic.day > maxAvailableDay && !checkins[topic.day],
-            }"
-            @click="selectDay(topic)"
-          >
-            <span class="day-icon">{{ topic.icon }}</span>
-            <span class="day-num">D{{ topic.day }}</span>
-            <span v-if="checkins[topic.day]" class="day-check">✅</span>
-            <span v-else-if="topic.day > maxAvailableDay" class="day-lock">🔒</span>
-            <span v-else-if="currentDay === topic.day" class="day-tag">当前</span>
+      <section class="hero-section">
+        <div class="hero-content">
+          <div class="hero-text">
+            <h2 class="hero-title">21天健康用网</h2>
+            <h3 class="hero-subtitle">打卡挑战</h3>
+            <div class="hero-checkmark">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="#22c55e" stroke="#22c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="20 6 9 17 4 12"/>
+              </svg>
+            </div>
+            <p class="hero-desc">自律上网每一天 健康成长每一步</p>
+          </div>
+          <div class="hero-illustration">
+            <img src="https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=cute%20cartoon%20boy%20holding%20smartphone%2C%20blue%20hoodie%2C%20happy%20expression%2C%20outdoor%20nature%20background%2C%20green%20trees%2C%20blue%20sky%2C%20simple%20flat%20illustration%2C%20health%20theme&image_size=portrait_4_3" alt="健康上网少年" />
           </div>
         </div>
-      </div>
+      </section>
 
-      <!-- 当前日问卷表单（有可打卡的天即显示） -->
-      <div class="form-section" v-if="currentTopic">
+      <section class="progress-section">
+        <div class="progress-card">
+          <div class="progress-header">
+            <span class="progress-label">我的打卡进度</span>
+            <span class="progress-count">已坚持 {{ stats.total_days }} 天</span>
+          </div>
+          <div class="day-circles">
+            <div
+              v-for="day in 21"
+              :key="day"
+              class="day-circle"
+              :class="{
+                done: checkins[day],
+                locked: !checkins[day] && day > maxAvailableDay,
+                current: !checkins[day] && day === maxAvailableDay,
+              }"
+              @click="selectDayByNumber(day)"
+            >
+              <span v-if="checkins[day]" class="day-check">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="white" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="20 6 9 17 4 12"/>
+                </svg>
+              </span>
+              <span v-else class="day-num">{{ day }}</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="form-section" v-if="currentTopic">
         <div class="form-card">
-          <!-- 今日主题 -->
-          <div class="topic-header">
-            <span class="topic-icon">{{ currentTopic.icon }}</span>
-            <div>
-              <h3 class="topic-day">第{{ currentTopic.day }}天</h3>
-              <h4 class="topic-title">{{ currentTopic.title }}</h4>
+          <div class="form-header">
+            <span class="form-title">今日打卡（第{{ currentTopic.day }}天）</span>
+            <span class="form-progress">{{ completedQuestions }}/5</span>
+          </div>
+          <p class="form-desc">请认真回答以下问题，记录你的今天吧~</p>
+
+          <div v-if="currentQuestionIndex === 0" class="question-block">
+            <div class="question-header">
+              <span class="question-num">1</span>
+              <span class="question-text">今天我使用网络的总时长大约是？</span>
+              <span class="question-tag">单选</span>
+            </div>
+            <div class="option-grid">
+              <label
+                v-for="opt in durationOptions"
+                :key="opt.value"
+                class="option-item"
+                :class="{ selected: form.online_duration === opt.value }"
+              >
+                <input type="radio" v-model="form.online_duration" :value="opt.value" hidden />
+                <span class="option-letter">{{ opt.letter }}</span>
+                <span class="option-label">{{ opt.label }}</span>
+              </label>
             </div>
           </div>
-          <p class="topic-desc">{{ currentTopic.content }}</p>
 
-          <!-- 问卷表单 -->
-          <form @submit.prevent="handleSubmit">
-            <!-- Q1: 上网时长 -->
-            <div class="q-block">
-              <div class="q-label">
-                <span class="q-icon">⏱️</span>
-                <span class="q-text">今日上网时长</span>
-                <span class="q-required">*必填</span>
-              </div>
-              <div class="duration-options">
-                <label
-                  v-for="d in durations"
-                  :key="d.value"
-                  class="dur-option"
-                  :class="{ selected: form.online_duration === d.value }"
-                >
-                  <input type="radio" v-model="form.online_duration" :value="d.value" hidden />
-                  <span class="dur-emoji">{{ d.emoji }}</span>
-                  <span class="dur-label">{{ d.label }}</span>
-                </label>
-              </div>
+          <div v-if="currentQuestionIndex === 1" class="question-block">
+            <div class="question-header">
+              <span class="question-num">2</span>
+              <span class="question-text">我今天上网主要做了什么？（可多选）</span>
+              <span class="question-tag">多选</span>
             </div>
-
-            <!-- Q2: 上网活动 -->
-            <div class="q-block">
-              <div class="q-label">
-                <span class="q-icon">🎮</span>
-                <span class="q-text">今日主要上网活动</span>
-                <span class="q-required">*多选</span>
-              </div>
-              <div class="activity-options">
-                <label
-                  v-for="a in activities"
-                  :key="a.value"
-                  class="act-option"
-                  :class="{ selected: selectedActivities.includes(a.value) }"
-                  @click="toggleActivity(a.value)"
-                >
-                  <span class="act-emoji">{{ a.emoji }}</span>
-                  <span class="act-label">{{ a.label }}</span>
-                  <span v-if="selectedActivities.includes(a.value)" class="act-check">✓</span>
-                </label>
-              </div>
+            <div class="activity-grid">
+              <label
+                v-for="act in activityOptions"
+                :key="act.value"
+                class="activity-item"
+                :class="{ selected: selectedActivities.includes(act.value) }"
+                @click="toggleActivity(act.value)"
+              >
+                <span class="activity-icon">{{ act.icon }}</span>
+                <span class="activity-label">{{ act.label }}</span>
+                <span v-if="selectedActivities.includes(act.value)" class="activity-check">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="white" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="20 6 9 17 4 12"/>
+                  </svg>
+                </span>
+              </label>
             </div>
+          </div>
 
-            <!-- Q3: 上网带来的影响 -->
-            <div class="q-block">
-              <div class="q-label">
-                <span class="q-icon">💡</span>
-                <span class="q-text">今日上网带来的影响</span>
-                <span class="q-required">*必填</span>
-              </div>
-              <textarea
-                v-model="form.online_impact"
-                class="q-textarea"
-                placeholder="说说今天上网给你带来了什么影响？好的和不好的都可以写..."
-                rows="3"
-              ></textarea>
+          <div v-if="currentQuestionIndex === 2" class="question-block">
+            <div class="question-header">
+              <span class="question-num">3</span>
+              <span class="question-text">今天我是否因为上网影响了以下事情？</span>
+              <span class="question-tag">单选</span>
             </div>
-
-            <!-- Q4: 今日打卡问题 -->
-            <div class="q-block">
-              <div class="q-label">
-                <span class="q-icon">✍️</span>
-                <span class="q-text">今日思考题</span>
-              </div>
-              <div class="topic-question-box">
-                <p>{{ currentTopic.question }}</p>
-              </div>
-              <textarea
-                v-model="form.answer"
-                class="q-textarea"
-                placeholder="写下你的想法吧...（至少5个字）"
-                rows="3"
-              ></textarea>
+            <div class="option-grid">
+              <label
+                v-for="opt in impactOptions"
+                :key="opt.value"
+                class="option-item"
+                :class="{ selected: form.online_impact === opt.value }"
+              >
+                <input type="radio" v-model="form.online_impact" :value="opt.value" hidden />
+                <span class="option-letter">{{ opt.letter }}</span>
+                <span class="option-label">{{ opt.label }}</span>
+              </label>
             </div>
+          </div>
 
-            <!-- 心情 -->
-            <div class="q-block">
-              <div class="q-label">
-                <span class="q-icon">😊</span>
-                <span class="q-text">今天的心情</span>
-              </div>
-              <div class="mood-selector">
-                <span
-                  v-for="m in moods"
-                  :key="m"
-                  class="mood-option"
-                  :class="{ selected: form.mood === m }"
-                  @click="form.mood = m"
-                >{{ m }}</span>
-              </div>
+          <div v-if="currentQuestionIndex === 3" class="question-block">
+            <div class="question-header">
+              <span class="question-num">4</span>
+              <span class="question-text">{{ currentTopic.title }}</span>
+              <span class="question-tag"></span>
             </div>
-
-            <!-- 错误提示 -->
-            <p v-if="errorMsg" class="error-text">{{ errorMsg }}</p>
-
-            <!-- 答题测评 -->
-            <div class="quiz-section">
-              <div class="quiz-header">
-                <span>🧠 安全知识测评（必答）</span>
-                <span class="quiz-status">{{ quizResult ? '✅ 已完成' : quizAllAnswered() ? '📝 待提交' : '⚠️ 未完成' }}</span>
-              </div>
-
-              <div v-if="quizResult" class="quiz-result-card">
-                <div class="quiz-score-circle" :class="quizResult.score >= 80 ? 'pass' : 'fail'">
-                  <span class="quiz-score-num">{{ quizResult.score }}</span>
-                  <span class="quiz-score-label">得分</span>
-                </div>
-                <div class="quiz-result-detail">
-                  <p class="quiz-result-text">
-                    {{ quizResult.correct }}/{{ quizResult.total }} 题正确
-                    {{ quizResult.score >= 80 ? ' 🎉 太棒了！' : ' 💪 继续加油！' }}
-                  </p>
-                  <button type="button" class="quiz-retry-btn" @click="quizRetry">重新答题</button>
-                </div>
-                <div class="quiz-explanations" v-if="quizResult.results">
-                  <div v-for="(r, i) in quizResult.results" :key="i" class="quiz-explain-item" :class="{ correct: r.is_correct, wrong: !r.is_correct }">
-                    <span class="quiz-explain-icon">{{ r.is_correct ? '✅' : '❌' }}</span>
-                    <div class="quiz-explain-text">
-                      <p>{{ r.question || ('题目 #' + r.id) }}</p>
-                      <p>
-                        正确答案：
-                         <span v-if="r.q_type === 'true_false'">{{ r.correct_answer === 'A' ? '✅ 正确' : '❌ 错误' }}</span>
-                        <span v-else>{{ r.correct_answer }}</span>
-                        （你选：
-                         <span v-if="r.q_type === 'true_false'">{{ r.user_answer === 'A' ? '✅ 正确' : r.user_answer === 'B' ? '❌ 错误' : (r.user_answer || '-') }}</span>
-                        <span v-else>{{ r.user_answer || '-' }}</span>
-                        ）
-                      </p>
-                      <p class="quiz-explain-detail" v-if="r.explanation">{{ r.explanation }}</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div v-else class="quiz-body">
-                <p class="quiz-tip">请回答以下安全问题（共 {{ quizQuestions.length }} 题，全部答完才能提交打卡）</p>
-                <div v-for="(q, qi) in quizQuestions" :key="q.id" class="quiz-item">
-                  <p class="quiz-q-title">
-                    {{ qi + 1 }}. {{ q.question }}
-                    <span v-if="q.q_type === 'true_false'" class="quiz-tf-badge">判断题</span>
-                  </p>
-                  <div class="quiz-options">
-                    <label
-                      v-for="(text, key) in filteredOptions(q)"
-                      :key="key"
-                      class="quiz-option"
-                      :class="{ selected: quizAnswerMap[q.id] === key }"
-                      @click="selectQuizAnswer(q.id, key)"
-                    >
-                      <span class="quiz-radio-dot" :class="{ checked: quizAnswerMap[q.id] === key }"></span>
-                      <span>
-                        <template v-if="q.q_type === 'true_false'">
-                           {{ key === 'A' ? '✅ 正确' : '❌ 错误' }}
-                        </template>
-                        <template v-else>
-                          {{ key }}. {{ text }}
-                        </template>
-                      </span>
-                    </label>
-                  </div>
-                </div>
-                <button type="button" class="quiz-submit-btn" @click="handleQuizSubmit" :disabled="quizSubmitted || !quizAllAnswered()">
-                  {{ quizSubmitted ? '提交中...' : '✅ 提交答案' }}
-                </button>
-              </div>
+            <div class="topic-question-box">
+              <p>{{ currentTopic.question }}</p>
             </div>
+            <textarea
+              v-model="form.answer"
+              class="question-textarea"
+              placeholder="写下你的想法吧...（至少5个字）"
+              rows="3"
+            ></textarea>
+          </div>
 
-            <!-- 提交按钮 -->
-            <button type="submit" class="btn-submit" :disabled="submitting">
+          <div v-if="currentQuestionIndex === 4" class="question-block">
+            <div class="question-header">
+              <span class="question-num">5</span>
+              <span class="question-text">今天的心情</span>
+              <span class="question-tag"></span>
+            </div>
+            <div class="mood-selector">
+              <span
+                v-for="m in moods"
+                :key="m"
+                class="mood-option"
+                :class="{ selected: form.mood === m }"
+                @click="form.mood = m"
+              >{{ m }}</span>
+            </div>
+          </div>
+
+          <div v-if="currentQuestionIndex >= 0 && currentQuestionIndex <= 3" class="question-nav">
+            <button v-if="currentQuestionIndex > 0" class="btn-prev" @click="prevQuestion">上一题</button>
+            <button class="btn-next" @click="nextQuestion" :disabled="!currentQuestionValid">
+              {{ currentQuestionIndex === 3 ? '完成打卡' : '下一题' }}
+            </button>
+          </div>
+
+          <div v-if="currentQuestionIndex === 4" class="question-nav">
+            <button class="btn-prev" @click="prevQuestion">上一题</button>
+            <button class="btn-submit" @click="handleSubmit" :disabled="submitting">
               {{ submitting ? '⏳ 提交中...' : '✅ 完成打卡，提交问卷' }}
             </button>
-          </form>
-        </div>
-      </div>
+          </div>
 
-      <!-- 全部完成 -->
-      <div class="form-section" v-else-if="stats.completed">
+          <p v-if="errorMsg" class="error-text">{{ errorMsg }}</p>
+
+          <div class="quiz-section">
+            <div class="quiz-header">
+              <span>🧠 安全知识测评（必答）</span>
+              <span class="quiz-status">{{ quizResult ? '✅ 已完成' : quizAllAnswered() ? '📝 待提交' : '⚠️ 未完成' }}</span>
+            </div>
+
+            <div v-if="quizResult" class="quiz-result-card">
+              <div class="quiz-score-circle" :class="quizResult.score >= 80 ? 'pass' : 'fail'">
+                <span class="quiz-score-num">{{ quizResult.score }}</span>
+                <span class="quiz-score-label">得分</span>
+              </div>
+              <div class="quiz-result-detail">
+                <p class="quiz-result-text">
+                  {{ quizResult.correct }}/{{ quizResult.total }} 题正确
+                  {{ quizResult.score >= 80 ? ' 🎉 太棒了！' : ' 💪 继续加油！' }}
+                </p>
+                <button type="button" class="quiz-retry-btn" @click="quizRetry">重新答题</button>
+              </div>
+              <div class="quiz-explanations" v-if="quizResult.results">
+                <div v-for="(r, i) in quizResult.results" :key="i" class="quiz-explain-item" :class="{ correct: r.is_correct, wrong: !r.is_correct }">
+                  <span class="quiz-explain-icon">{{ r.is_correct ? '✅' : '❌' }}</span>
+                  <div class="quiz-explain-text">
+                    <p>{{ r.question || ('题目 #' + r.id) }}</p>
+                    <p>
+                      正确答案：
+                       <span v-if="r.q_type === 'true_false'">{{ r.correct_answer === 'A' ? '✅ 正确' : '❌ 错误' }}</span>
+                      <span v-else>{{ r.correct_answer }}</span>
+                      （你选：
+                       <span v-if="r.q_type === 'true_false'">{{ r.user_answer === 'A' ? '✅ 正确' : r.user_answer === 'B' ? '❌ 错误' : (r.user_answer || '-') }}</span>
+                      <span v-else>{{ r.user_answer || '-' }}</span>
+                      ）
+                    </p>
+                    <p class="quiz-explain-detail" v-if="r.explanation">{{ r.explanation }}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div v-else class="quiz-body">
+              <p class="quiz-tip">请回答以下安全问题（共 {{ quizQuestions.length }} 题，全部答完才能提交打卡）</p>
+              <div v-for="(q, qi) in quizQuestions" :key="q.id" class="quiz-item">
+                <p class="quiz-q-title">
+                  {{ qi + 1 }}. {{ q.question }}
+                  <span v-if="q.q_type === 'true_false'" class="quiz-tf-badge">判断题</span>
+                </p>
+                <div class="quiz-options">
+                  <label
+                    v-for="(text, key) in filteredOptions(q)"
+                    :key="key"
+                    class="quiz-option"
+                    :class="{ selected: quizAnswerMap[q.id] === key }"
+                    @click="selectQuizAnswer(q.id, key)"
+                  >
+                    <span class="quiz-radio-dot" :class="{ checked: quizAnswerMap[q.id] === key }"></span>
+                    <span>
+                      <template v-if="q.q_type === 'true_false'">
+                         {{ key === 'A' ? '✅ 正确' : '❌ 错误' }}
+                      </template>
+                      <template v-else>
+                        {{ key }}. {{ text }}
+                      </template>
+                    </span>
+                  </label>
+                </div>
+              </div>
+              <button type="button" class="quiz-submit-btn" @click="handleQuizSubmit" :disabled="quizSubmitted || !quizAllAnswered()">
+                {{ quizSubmitted ? '提交中...' : '✅ 提交答案' }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="form-section" v-else-if="stats.completed">
         <div class="all-done-card">
           <span class="all-done-icon">🏆</span>
           <h3>恭喜！21天全部完成！</h3>
           <p>你已经是网络安全小达人了！</p>
           <button class="btn-primary" @click="goHome">返回首页</button>
         </div>
-      </div>
+      </section>
 
-      <!-- 暂无任务 -->
-      <div class="form-section" v-else>
+      <section class="form-section" v-else>
         <div class="all-done-card" style="background: #f0f4ff;">
           <span class="all-done-icon">☕</span>
           <h3>暂无打卡任务</h3>
           <p>休息一下，明天继续加油～</p>
           <button class="btn-primary" @click="goHome">返回首页</button>
         </div>
-      </div>
+      </section>
     </div>
-    <!-- 底部导航 -->
+
     <nav class="bottom-nav">
-      <button class="nav-item" @click="router.push('/')">
-        <span>🏠</span><span>首页</span>
+      <button class="nav-item" :class="{ active: activeTab === 'checkin' }" @click="activeTab = 'checkin'">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+          <line x1="16" y1="2" x2="16" y2="6"/>
+          <line x1="8" y1="2" x2="8" y2="6"/>
+          <line x1="3" y1="10" x2="21" y2="10"/>
+        </svg>
+        <span>今日打卡</span>
       </button>
-      <button class="nav-item active">
-        <span>📅</span><span>打卡</span>
+      <button class="nav-item" :class="{ active: activeTab === 'history' }" @click="activeTab = 'history'; router.push('/stats')">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="20" x2="18" y2="10"/>
+          <line x1="12" y1="20" x2="12" y2="4"/>
+          <line x1="6" y1="20" x2="6" y2="14"/>
+        </svg>
+        <span>打卡记录</span>
       </button>
-      <button class="nav-item" @click="router.push('/stats')">
-        <span>📊</span><span>统计</span>
+      <button class="nav-item" :class="{ active: activeTab === 'achievements' }" @click="activeTab = 'achievements'; router.push('/my')">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+        </svg>
+        <span>我的成就</span>
       </button>
-      <button class="nav-item" @click="router.push('/messages')">
-        <span>💬</span><span>留言</span>
-      </button>
-      <button class="nav-item" @click="router.push('/my')">
-        <span>👤</span><span>我的</span>
+      <button class="nav-item" :class="{ active: activeTab === 'profile' }" @click="activeTab = 'profile'; router.push('/my')">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+          <circle cx="12" cy="7" r="4"/>
+        </svg>
+        <span>个人中心</span>
       </button>
     </nav>
   </div>
@@ -370,8 +397,9 @@ const countdownText = ref('即将返回首页...')
 const lastSubmit = reactive({ duration: '', activities: '', mood: '' })
 const viewingRecord = ref(null)
 const selectedActivities = ref([])
+const activeTab = ref('checkin')
+const currentQuestionIndex = ref(0)
 
-// 表单
 const form = reactive({
   online_duration: '',
   online_activities: '',
@@ -380,7 +408,6 @@ const form = reactive({
   mood: '😊',
 })
 
-// 答题测评
 const quizQuestions = ref([])
 const quizAnswerMap = ref({})
 const quizSubmitted = ref(false)
@@ -399,7 +426,6 @@ function filteredOptions(q) {
   if (q.q_type === 'true_false') {
     return { A: opts.A || '正确', B: opts.B || '错误' }
   }
-  // Filter out empty options for choice questions
   const filtered = {}
   for (const [k, v] of Object.entries(opts)) {
     if (v) filtered[k] = v
@@ -474,39 +500,36 @@ function quizRetry() {
   quizSubmitted.value = false
 }
 
-// 上网时长选项
-const durations = [
-  { value: '0-1小时', label: '0-1小时', emoji: '📱' },
-  { value: '1-3小时', label: '1-3小时', emoji: '🕐' },
-  { value: '3-5小时', label: '3-5小时', emoji: '🕒' },
-  { value: '5小时以上', label: '5小时以上', emoji: '🕔' },
+const durationOptions = [
+  { letter: 'A', value: '少于1小时', label: '少于1小时' },
+  { letter: 'B', value: '1-2小时', label: '1-2小时' },
+  { letter: 'C', value: '2-3小时', label: '2-3小时' },
+  { letter: 'D', value: '超过3小时', label: '超过3小时' },
 ]
 
-// 上网活动选项
-const activities = [
-  { value: '学习查资料', label: '学习查资料', emoji: '📚' },
-  { value: '玩游戏', label: '玩游戏', emoji: '🎮' },
-  { value: '刷短视频', label: '刷短视频', emoji: '🎬' },
-  { value: '社交聊天', label: '社交聊天', emoji: '💬' },
-  { value: '看视频追剧', label: '看视频追剧', emoji: '📺' },
-  { value: '听音乐', label: '听音乐', emoji: '🎵' },
-  { value: '网购', label: '网购', emoji: '🛒' },
-  { value: '其他', label: '其他', emoji: '📌' },
+const activityOptions = [
+  { value: '学习查资料', label: '学习/查资料', icon: '📚' },
+  { value: '听音乐看视频', label: '听音乐/看视频', icon: '🎵' },
+  { value: '社交聊天', label: '社交聊天', icon: '💬' },
+  { value: '玩游戏', label: '玩游戏', icon: '🎮' },
+  { value: '浏览新闻资讯', label: '浏览新闻/资讯', icon: '📰' },
+  { value: '其他', label: '其他', icon: '📌' },
+]
+
+const impactOptions = [
+  { letter: 'A', value: '没有影响', label: '没有影响' },
+  { letter: 'B', value: '轻微影响', label: '轻微影响' },
+  { letter: 'C', value: '有些影响', label: '有些影响' },
+  { letter: 'D', value: '严重影响', label: '严重影响' },
 ]
 
 const moods = ['😊', '😄', '🥰', '🤩', '😎', '🤗', '💪', '🔥', '😅', '🤔']
 
-const user = JSON.parse(localStorage.getItem('user') || '{}')
-const userName = computed(() => user.nickname || '小朋友')
-const userAvatar = computed(() => '🧒')
-
-// 当前可打卡天数
 const maxAvailableDay = computed(() => {
   const maxChecked = Math.max(0, ...Object.keys(checkins).map(Number))
   return Math.min(maxChecked + 1, 21)
 })
 
-// 当前打卡主题
 const currentTopic = computed(() => {
   const targetDay = currentDay.value || maxAvailableDay.value
   if (!targetDay || targetDay > 21) return null
@@ -514,7 +537,25 @@ const currentTopic = computed(() => {
   return topics.value.find(t => t.day === targetDay)
 })
 
-// 切换活动选择
+const completedQuestions = computed(() => {
+  let count = 0
+  if (form.online_duration) count++
+  if (selectedActivities.value.length > 0) count++
+  if (form.online_impact) count++
+  if (form.answer.trim()) count++
+  if (form.mood) count++
+  return count
+})
+
+const currentQuestionValid = computed(() => {
+  if (currentQuestionIndex.value === 0) return !!form.online_duration
+  if (currentQuestionIndex.value === 1) return selectedActivities.value.length > 0
+  if (currentQuestionIndex.value === 2) return !!form.online_impact
+  if (currentQuestionIndex.value === 3) return form.answer.trim().length >= 5
+  if (currentQuestionIndex.value === 4) return !!form.mood
+  return false
+})
+
 function toggleActivity(val) {
   const idx = selectedActivities.value.indexOf(val)
   if (idx >= 0) {
@@ -525,23 +566,24 @@ function toggleActivity(val) {
   form.online_activities = selectedActivities.value.join('、')
 }
 
-// 选择某天
-async function selectDay(topic) {
-  if (checkins[topic.day]) {
-    // 查看已完成的记录
-    viewingRecord.value = {
-      ...checkins[topic.day],
-      icon: topic.icon,
-      title: topic.title,
+function selectDayByNumber(day) {
+  if (checkins[day]) {
+    const topic = topics.value.find(t => t.day === day)
+    if (topic) {
+      viewingRecord.value = {
+        ...checkins[day],
+        icon: topic.icon,
+        title: topic.title,
+      }
     }
     return
   }
-  if (topic.day > maxAvailableDay.value) return
+  if (day > maxAvailableDay.value) return
   viewingRecord.value = null
-  currentDay.value = topic.day
+  currentDay.value = day
   resetForm()
-  await loadQuiz()
-  window.scrollTo({ top: document.querySelector('.form-section')?.offsetTop - 20, behavior: 'smooth' })
+  currentQuestionIndex.value = 0
+  loadQuiz()
 }
 
 function resetForm() {
@@ -556,6 +598,19 @@ function resetForm() {
 
 function goHome() {
   router.push('/')
+}
+
+function prevQuestion() {
+  if (currentQuestionIndex.value > 0) {
+    currentQuestionIndex.value--
+  }
+}
+
+function nextQuestion() {
+  if (!currentQuestionValid.value) return
+  if (currentQuestionIndex.value < 4) {
+    currentQuestionIndex.value++
+  }
 }
 
 function confettiStyle(i) {
@@ -588,25 +643,27 @@ async function loadData() {
 async function handleSubmit() {
   errorMsg.value = ''
 
-  // 前端校验
   if (!form.online_duration) {
     errorMsg.value = '请选择今日上网时长'
+    currentQuestionIndex.value = 0
     return
   }
   if (selectedActivities.value.length === 0) {
     errorMsg.value = '请至少选择一项上网活动'
+    currentQuestionIndex.value = 1
     return
   }
-  if (!form.online_impact.trim()) {
-    errorMsg.value = '请填写上网带来的影响'
+  if (!form.online_impact) {
+    errorMsg.value = '请选择上网带来的影响'
+    currentQuestionIndex.value = 2
     return
   }
   if (!form.answer.trim() || form.answer.trim().length < 5) {
     errorMsg.value = '请认真回答思考题（至少5个字）'
+    currentQuestionIndex.value = 3
     return
   }
 
-  // 答题测评必答
   if (!quizResult.value) {
     if (!quizAllAnswered()) {
       errorMsg.value = '请先完成安全知识测评（全部题目）'
@@ -625,18 +682,16 @@ async function handleSubmit() {
       answer: form.answer.trim(),
       online_duration: form.online_duration,
       online_activities: form.online_activities,
-      online_impact: form.online_impact.trim(),
+      online_impact: form.online_impact,
       mood: form.mood,
     })
     const data = res.data
 
-    // 更新本地数据
     checkins[day] = data.record
     stats.total_days++
     stats.progress = Math.round(stats.total_days / 21 * 100)
     if (stats.total_days > stats.streak_days) stats.streak_days = stats.total_days
 
-    // 显示成功画面
     lastSubmit.duration = form.online_duration
     lastSubmit.activities = form.online_activities
     lastSubmit.mood = form.mood
@@ -645,7 +700,6 @@ async function handleSubmit() {
     successPercent.value = stats.progress
     submitted.value = true
 
-    // 倒计时返回
     let sec = 3
     countdownText.value = `${sec}秒后自动返回首页...`
     const timer = setInterval(() => {
@@ -674,234 +728,373 @@ onMounted(async () => {
 <style scoped>
 .checkin-page {
   min-height: 100vh;
-  background: linear-gradient(180deg, #e8f4fd 0%, #fdf2f8 50%, #f0fdf4 100%);
+  background: linear-gradient(180deg, #87CEEB 0%, #E0F4FF 40%, #F0FDF4 100%);
   padding-bottom: 80px;
   font-family: -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif;
 }
 
-/* Top Bar */
 .top-bar {
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 12px 16px;
+  background: rgba(255,255,255,0.9);
+  backdrop-filter: blur(12px);
   position: sticky;
   top: 0;
   z-index: 40;
-  background: rgba(255,255,255,0.9);
-  backdrop-filter: blur(12px);
 }
 .btn-back {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  background: #f5f5f5;
+  background: none;
   border: none;
-  padding: 6px 14px;
-  border-radius: 15px;
-  font-size: 13px;
-  color: #555;
+  color: #333;
   cursor: pointer;
-  font-weight: 600;
+  padding: 6px;
+  border-radius: 10px;
+  transition: background 0.2s;
 }
-.top-user { display: flex; align-items: center; gap: 8px; }
-.user-avatar { font-size: 28px; }
-.user-name { font-size: 15px; font-weight: 700; color: #333; }
-
-/* Progress */
-.progress-section {
-  padding: 0 16px 16px;
-}
-.progress-info {
-  display: flex;
-  justify-content: space-between;
-  font-size: 13px;
-  color: #888;
-  margin-bottom: 6px;
-}
-.progress-num { font-weight: 700; color: #667eea; }
-.progress-bar {
-  height: 8px;
-  background: #e8ecf4;
-  border-radius: 8px;
-  overflow: hidden;
-}
-.progress-fill {
-  height: 100%;
-  background: linear-gradient(90deg, #667eea, #e84393);
-  border-radius: 8px;
-  transition: width 0.5s;
-}
-
-/* Grid */
-.grid-section {
-  padding: 0 16px;
-  margin-bottom: 20px;
-}
-.section-title {
-  font-size: 16px;
+.btn-back:hover { background: #f0f0f0; }
+.page-title {
+  font-size: 17px;
   font-weight: 700;
   color: #333;
-  margin: 0 0 12px;
+  margin: 0;
 }
-.day-grid {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 6px;
-}
-.day-card {
-  background: white;
-  border-radius: 10px;
-  padding: 8px 2px;
-  text-align: center;
+.btn-rules {
+  background: none;
+  border: none;
+  color: #1E90FF;
+  font-size: 14px;
+  font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s;
-  box-shadow: 0 1px 6px rgba(0,0,0,0.04);
+  padding: 6px 12px;
+  border-radius: 10px;
+  transition: background 0.2s;
+}
+.btn-rules:hover { background: #e6f2ff; }
+
+.hero-section {
+  padding: 20px 16px;
   position: relative;
-  font-size: 11px;
 }
-.day-card:active { transform: scale(0.95); }
-.day-card.done {
-  background: linear-gradient(135deg, #e8f5e9, #c8e6c9);
-}
-.day-card.active {
-  background: linear-gradient(135deg, #e3f2fd, #bbdefb);
-  border: 2px solid #667eea;
-}
-.day-card.locked { opacity: 0.45; cursor: not-allowed; }
-.day-icon { font-size: 18px; display: block; }
-.day-num { font-size: 10px; color: #999; font-weight: 600; }
-.day-check, .day-lock { font-size: 10px; position: absolute; top: 2px; right: 2px; }
-.day-tag {
+.hero-section::before {
+  content: '';
   position: absolute;
-  top: 1px; right: 1px;
-  background: #667eea;
-  color: white;
-  font-size: 9px;
-  padding: 1px 4px;
-  border-radius: 5px;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='20' cy='30' r='4' fill='white' opacity='0.6'/%3E%3Ccircle cx='60' cy='20' r='6' fill='white' opacity='0.5'/%3E%3Ccircle cx='80' cy='40' r='3' fill='white' opacity='0.7'/%3E%3C/svg%3E");
+  background-size: 200px 200px;
+}
+.hero-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+  z-index: 1;
+}
+.hero-text {
+  flex: 1;
+  padding-right: 16px;
+}
+.hero-title {
+  font-size: 32px;
+  font-weight: 900;
+  color: #0066CC;
+  margin: 0;
+  line-height: 1.2;
+}
+.hero-subtitle {
+  font-size: 28px;
+  font-weight: 900;
+  color: #0066CC;
+  margin: 0;
+  line-height: 1.2;
+}
+.hero-checkmark {
+  display: inline-block;
+  background: #22c55e;
+  border-radius: 50%;
+  padding: 4px;
+  margin-left: 8px;
+  vertical-align: middle;
+}
+.hero-desc {
+  font-size: 13px;
+  color: #555;
+  margin: 8px 0 0;
+  font-weight: 500;
+}
+.hero-illustration {
+  width: 120px;
+  height: 120px;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+}
+.hero-illustration img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
-/* Form Section */
-.form-section { padding: 0 16px; }
+.progress-section {
+  padding: 0 16px;
+  margin-bottom: 16px;
+}
+.progress-card {
+  background: white;
+  border-radius: 20px;
+  padding: 20px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+}
+.progress-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+.progress-label {
+  font-size: 15px;
+  font-weight: 700;
+  color: #333;
+}
+.progress-count {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1E90FF;
+}
+.day-circles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.day-circle {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #f0f0f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+}
+.day-circle:hover {
+  transform: scale(1.1);
+}
+.day-circle.done {
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+}
+.day-circle.current {
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  animation: pulse 1.5s infinite;
+}
+.day-circle.locked {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.day-num {
+  font-size: 13px;
+  font-weight: 700;
+  color: #888;
+}
+.day-circle.done .day-num { color: white; }
+.day-circle.current .day-num { color: white; }
+.day-check {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+@keyframes pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4); }
+  50% { box-shadow: 0 0 0 6px rgba(59, 130, 246, 0); }
+}
+
+.form-section {
+  padding: 0 16px;
+}
 .form-card {
   background: white;
   border-radius: 20px;
   padding: 20px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.08);
 }
-.topic-header {
+.form-header {
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  gap: 12px;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
 }
-.topic-icon { font-size: 40px; }
-.topic-day { font-size: 13px; color: #667eea; margin: 0; }
-.topic-title { font-size: 18px; color: #333; margin: 2px 0 0; font-weight: 800; }
-.topic-desc { font-size: 13px; color: #888; margin: 0 0 18px; line-height: 1.5; }
-.topic-question-box {
-  background: #f0f4ff;
-  border-radius: 12px;
-  padding: 12px;
-  margin-bottom: 10px;
+.form-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #333;
+}
+.form-progress {
+  font-size: 14px;
+  font-weight: 700;
+  color: #1E90FF;
+}
+.form-desc {
   font-size: 13px;
-  color: #555;
-  line-height: 1.5;
+  color: #888;
+  margin: 0 0 20px;
 }
-.topic-question-box p { margin: 0; }
 
-/* Question Blocks */
-.q-block {
-  margin-bottom: 20px;
+.question-block {
+  margin-bottom: 24px;
 }
-.q-label {
+.question-header {
   display: flex;
   align-items: center;
-  gap: 6px;
-  margin-bottom: 10px;
+  gap: 8px;
+  margin-bottom: 14px;
 }
-.q-icon { font-size: 16px; }
-.q-text { font-size: 14px; font-weight: 700; color: #333; }
-.q-required {
+.question-num {
+  width: 28px;
+  height: 28px;
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  border-radius: 50%;
+  color: white;
+  font-size: 14px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.question-text {
+  font-size: 15px;
+  font-weight: 700;
+  color: #333;
+  flex: 1;
+}
+.question-tag {
   font-size: 11px;
-  color: #fff;
-  background: #ff6b6b;
-  padding: 1px 6px;
+  color: white;
+  background: #3b82f6;
+  padding: 2px 8px;
   border-radius: 8px;
+  font-weight: 600;
 }
 
-/* Duration */
-.duration-options {
+.option-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 8px;
+  gap: 10px;
 }
-.dur-option {
-  background: #f5f7fb;
-  border-radius: 12px;
-  padding: 12px 8px;
-  text-align: center;
+.option-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #f8fafc;
+  border-radius: 14px;
+  padding: 14px 12px;
   cursor: pointer;
   border: 2px solid transparent;
   transition: all 0.2s;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
 }
-.dur-option.selected {
-  border-color: #667eea;
+.option-item:hover {
   background: #f0f4ff;
 }
-.dur-emoji { font-size: 24px; }
-.dur-label { font-size: 13px; font-weight: 600; color: #555; }
-.dur-option.selected .dur-label { color: #667eea; }
-
-/* Activities */
-.activity-options {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 8px;
+.option-item.selected {
+  background: #eff6ff;
+  border-color: #3b82f6;
 }
-.act-option {
-  background: #f5f7fb;
-  border-radius: 10px;
-  padding: 10px 8px;
+.option-letter {
+  width: 28px;
+  height: 28px;
+  background: #e2e8f0;
+  border-radius: 50%;
   display: flex;
   align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  color: #64748b;
+}
+.option-item.selected .option-letter {
+  background: #3b82f6;
+  color: white;
+}
+.option-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #475569;
+}
+.option-item.selected .option-label {
+  color: #1e40af;
+}
+
+.activity-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+.activity-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   gap: 6px;
+  background: #f8fafc;
+  border-radius: 14px;
+  padding: 14px 8px;
   cursor: pointer;
   border: 2px solid transparent;
   transition: all 0.2s;
   position: relative;
 }
-.act-option.selected {
-  border-color: #667eea;
+.activity-item:hover {
   background: #f0f4ff;
 }
-.act-emoji { font-size: 18px; }
-.act-label { font-size: 12px; font-weight: 600; color: #555; }
-.act-option.selected .act-label { color: #667eea; }
-.act-check {
+.activity-item.selected {
+  background: #eff6ff;
+  border-color: #3b82f6;
+}
+.activity-icon {
+  font-size: 24px;
+}
+.activity-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #475569;
+  text-align: center;
+}
+.activity-item.selected .activity-label {
+  color: #1e40af;
+}
+.activity-check {
   position: absolute;
-  right: 6px;
-  top: 6px;
+  top: 4px;
+  right: 4px;
   width: 18px;
   height: 18px;
-  background: #667eea;
-  color: white;
+  background: #3b82f6;
   border-radius: 50%;
-  font-size: 11px;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.q-textarea {
-  width: 100%;
-  border: 2px solid #e8ecf4;
+.topic-question-box {
+  background: #eff6ff;
   border-radius: 12px;
-  padding: 12px;
+  padding: 14px;
+  margin-bottom: 12px;
+}
+.topic-question-box p {
+  font-size: 14px;
+  color: #475569;
+  line-height: 1.6;
+  margin: 0;
+}
+.question-textarea {
+  width: 100%;
+  border: 2px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 14px;
   font-size: 14px;
   resize: none;
   outline: none;
@@ -909,221 +1102,100 @@ onMounted(async () => {
   font-family: inherit;
   transition: border-color 0.2s;
 }
-.q-textarea:focus { border-color: #667eea; }
+.question-textarea:focus {
+  border-color: #3b82f6;
+}
 
-/* Mood */
 .mood-selector {
   display: flex;
-  gap: 6px;
+  gap: 8px;
   flex-wrap: wrap;
 }
 .mood-option {
-  font-size: 28px;
+  font-size: 32px;
   cursor: pointer;
-  padding: 4px 6px;
-  border-radius: 10px;
+  padding: 6px;
+  border-radius: 14px;
   transition: all 0.2s;
-  opacity: 0.4;
+  opacity: 0.5;
 }
 .mood-option.selected, .mood-option:hover {
   opacity: 1;
-  transform: scale(1.15);
-  background: #f0f4ff;
+  transform: scale(1.2);
+  background: #eff6ff;
 }
 
-.error-text {
-  color: #ff4757;
-  font-size: 13px;
-  text-align: center;
-  margin: 0 0 10px;
+.question-nav {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+}
+.btn-prev {
+  flex: 1;
+  background: #f1f5f9;
+  color: #475569;
+  border: none;
+  padding: 14px;
+  border-radius: 14px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-prev:hover {
+  background: #e2e8f0;
+}
+.btn-next {
+  flex: 2;
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  color: white;
+  border: none;
+  padding: 14px;
+  border-radius: 14px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-next:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+}
+.btn-next:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .btn-submit {
-  width: 100%;
-  background: linear-gradient(135deg, #667eea, #764ba2);
+  flex: 2;
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
   color: white;
   border: none;
   padding: 14px;
-  border-radius: 15px;
-  font-size: 16px;
+  border-radius: 14px;
+  font-size: 15px;
   font-weight: 700;
   cursor: pointer;
-  transition: transform 0.2s;
+  transition: all 0.2s;
 }
-.btn-submit:hover:not(:disabled) { transform: translateY(-2px); }
-.btn-submit:disabled { opacity: 0.6; transform: none; }
-
-.btn-primary {
-  width: 100%;
-  background: linear-gradient(135deg, #667eea, #764ba2);
-  color: white;
-  border: none;
-  padding: 14px;
-  border-radius: 15px;
-  font-size: 16px;
-  font-weight: 700;
-  cursor: pointer;
-  margin-top: 16px;
+.btn-submit:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+}
+.btn-submit:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
-/* Success Modal */
-.success-overlay {
-  position: fixed; inset: 0; background: rgba(0,0,0,0.55);
-  display: flex; align-items: center; justify-content: center;
-  z-index: 999; padding: 20px;
-  animation: fadeIn 0.3s;
-}
-@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-.success-modal {
-  background: white; border-radius: 28px; padding: 36px 28px 28px;
-  width: 100%; max-width: 360px; text-align: center;
-  position: relative; overflow: hidden;
-  box-shadow: 0 24px 60px rgba(0,0,0,0.3);
-  animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-}
-@keyframes popIn {
-  from { transform: scale(0.6); opacity: 0; }
-  to { transform: scale(1); opacity: 1; }
-}
-.success-icon-wrap {
-  width: 80px; height: 80px; margin: 0 auto 10px;
-  background: linear-gradient(135deg, #2ed573, #7bed9f);
-  border-radius: 50%; display: flex;
-  align-items: center; justify-content: center;
-  animation: pulse 0.6s infinite alternate;
-}
-@keyframes pulse {
-  from { transform: scale(1); }
-  to { transform: scale(1.08); }
-}
-.success-emoji { font-size: 40px; }
-.success-modal h2 {
-  color: #2ed573; margin: 0 0 8px; font-size: 24px; font-weight: 800;
-}
-.success-badge {
-  display: inline-block; background: linear-gradient(135deg, #667eea, #764ba2);
-  color: white; font-size: 13px; padding: 4px 16px;
-  border-radius: 20px; font-weight: 700; margin-bottom: 8px;
-}
-.success-msg { color: #666; font-size: 14px; margin: 0 0 16px; }
-.progress-mini {
-  height: 8px;
-  background: #e8ecf4;
-  border-radius: 8px;
-  overflow: hidden;
-  margin-bottom: 12px;
-}
-.progress-mini-fill {
-  height: 100%;
-  background: linear-gradient(90deg, #2ed573, #7bed9f);
-  border-radius: 8px;
-  transition: width 0.8s ease;
-}
-.success-detail {
-  margin: 12px 0;
-  background: #f8faf9;
-  border-radius: 12px;
-  padding: 10px 14px;
-}
-.detail-row {
-  display: flex; align-items: center; gap: 8px;
-  font-size: 12px; color: #666; padding: 3px 0;
-}
-.detail-row span:first-child { font-size: 14px; }
-.auto-back { color: #aaa; font-size: 13px; margin: 10px 0 4px; }
-.modal-btn { margin-top: 8px; }
-
-/* Confetti */
-.confetti-container {
-  position: absolute; top: 0; left: 0; right: 0; height: 100%;
-  pointer-events: none; overflow: hidden; z-index: 0;
-}
-.confetti {
-  position: absolute; top: -10px; border-radius: 2px;
-  animation: confettiFall linear forwards;
-}
-@keyframes confettiFall {
-  0% { transform: translateY(-10px) rotate(0deg); opacity: 1; }
-  100% { transform: translateY(500px) rotate(720deg); opacity: 0; }
-}
-
-/* Done View */
-.done-view {
-  padding: 20px 16px;
-}
-.done-card {
-  background: white;
-  border-radius: 20px;
-  padding: 20px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.06);
-}
-.done-header {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 20px;
-  padding-bottom: 16px;
-  border-bottom: 1px solid #f0f0f0;
-}
-.done-icon { font-size: 44px; }
-.done-header h3 { color: #667eea; margin: 0; font-size: 14px; }
-.done-header h4 { color: #333; margin: 4px 0 0; font-size: 18px; font-weight: 800; }
-.done-body { margin-bottom: 20px; }
-.done-field {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  padding: 10px 0;
-  border-bottom: 1px solid #f8f8f8;
-  gap: 10px;
-}
-.done-label { font-size: 13px; color: #888; flex-shrink: 0; font-weight: 600; }
-.done-value { font-size: 13px; color: #333; text-align: right; line-height: 1.5; }
-
-/* All Done */
-.all-done-card {
-  background: white;
-  border-radius: 20px;
-  padding: 36px 24px;
+.error-text {
+  color: #dc2626;
+  font-size: 13px;
   text-align: center;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+  margin: 12px 0;
 }
-.all-done-icon { font-size: 64px; display: block; margin-bottom: 12px; }
-.all-done-card h3 { color: #333; margin: 0 0 6px; font-size: 18px; }
-.all-done-card p { color: #888; font-size: 14px; margin: 0 0 10px; }
 
-/* Bottom Nav */
-.bottom-nav {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background: white;
-  display: flex;
-  justify-content: space-around;
-  padding: 10px 0;
-  border-radius: 20px 20px 0 0;
-  box-shadow: 0 -2px 20px rgba(0,0,0,0.08);
-  z-index: 50;
-}
-.nav-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-  background: none;
-  border: none;
-  font-size: 12px;
-  color: #999;
-  cursor: pointer;
-  padding: 5px 20px;
-}
-.nav-item.active { color: #667eea; font-weight: 700; }
-.nav-item span:first-child { font-size: 22px; }
-
-/* Quiz Section */
 .quiz-section {
-  margin: 0 16px 16px;
+  margin: 20px 0 0;
 }
 .quiz-header {
   display: flex;
@@ -1190,31 +1262,31 @@ onMounted(async () => {
   gap: 8px;
   padding: 10px 12px;
   border-radius: 10px;
-  background: #f5f7fb;
+  background: #f8fafc;
   cursor: pointer;
   border: 2px solid transparent;
   transition: all 0.2s;
   font-size: 13px;
   color: #555;
 }
-.quiz-option:hover { background: #eef0ff; }
+.quiz-option:hover { background: #eff6ff; }
 .quiz-option.selected {
-  border-color: #667eea;
-  background: #f0f4ff;
+  border-color: #3b82f6;
+  background: #eff6ff;
   color: #333;
 }
 .quiz-radio-dot {
   width: 18px;
   height: 18px;
   border-radius: 50%;
-  border: 2px solid #ccc;
+  border: 2px solid #cbd5e1;
   flex-shrink: 0;
   transition: all 0.2s;
   position: relative;
 }
 .quiz-radio-dot.checked {
-  border-color: #667eea;
-  background: #667eea;
+  border-color: #3b82f6;
+  background: #3b82f6;
 }
 .quiz-radio-dot.checked::after {
   content: '';
@@ -1225,9 +1297,6 @@ onMounted(async () => {
   border-radius: 50%;
   top: 4px;
   left: 4px;
-}
-.quiz-option input[type="radio"] {
-  display: none;
 }
 .quiz-submit-btn {
   width: 100%;
@@ -1245,7 +1314,6 @@ onMounted(async () => {
 .quiz-submit-btn:hover:not(:disabled) { transform: translateY(-2px); }
 .quiz-submit-btn:disabled { opacity: 0.6; }
 
-/* Quiz Results */
 .quiz-result-card {
   background: white;
   border-radius: 16px;
@@ -1265,25 +1333,25 @@ onMounted(async () => {
   justify-content: center;
   border: 5px solid;
 }
-.quiz-score-circle.pass { border-color: #2ed573; background: #f0fff4; }
-.quiz-score-circle.fail { border-color: #ff6b6b; background: #fff5f5; }
+.quiz-score-circle.pass { border-color: #22c55e; background: #f0fff4; }
+.quiz-score-circle.fail { border-color: #dc2626; background: #fff5f5; }
 .quiz-score-num { font-size: 28px; font-weight: 800; }
-.quiz-score-circle.pass .quiz-score-num { color: #2ed573; }
-.quiz-score-circle.fail .quiz-score-num { color: #ff6b6b; }
+.quiz-score-circle.pass .quiz-score-num { color: #22c55e; }
+.quiz-score-circle.fail .quiz-score-num { color: #dc2626; }
 .quiz-score-label { font-size: 11px; color: #888; }
 .quiz-result-detail { margin-bottom: 14px; }
 .quiz-result-text { font-size: 14px; color: #333; margin: 0 0 8px; }
 .quiz-retry-btn {
-  background: #f0f0f0;
+  background: #f1f5f9;
   border: none;
   padding: 8px 20px;
   border-radius: 10px;
   font-size: 13px;
   cursor: pointer;
-  color: #555;
+  color: #475569;
   transition: all 0.2s;
 }
-.quiz-retry-btn:hover { background: #ddd; }
+.quiz-retry-btn:hover { background: #e2e8f0; }
 .quiz-explanations {
   text-align: left;
   border-top: 1px solid #f0f0f0;
@@ -1304,9 +1372,180 @@ onMounted(async () => {
 .quiz-explain-detail {
   color: #999;
   font-size: 11px;
-  background: #f8f8f8;
+  background: #f8fafc;
   border-radius: 8px;
   padding: 6px 10px;
   margin-top: 4px;
+}
+
+.btn-primary {
+  width: 100%;
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  color: white;
+  border: none;
+  padding: 14px;
+  border-radius: 14px;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  margin-top: 16px;
+  transition: all 0.2s;
+}
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+}
+
+.all-done-card {
+  background: white;
+  border-radius: 20px;
+  padding: 36px 24px;
+  text-align: center;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+}
+.all-done-icon { font-size: 64px; display: block; margin-bottom: 12px; }
+.all-done-card h3 { color: #333; margin: 0 0 6px; font-size: 18px; }
+.all-done-card p { color: #888; font-size: 14px; margin: 0 0 10px; }
+
+.success-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.55);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 999; padding: 20px;
+  animation: fadeIn 0.3s;
+}
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+.success-modal {
+  background: white; border-radius: 28px; padding: 36px 28px 28px;
+  width: 100%; max-width: 360px; text-align: center;
+  position: relative; overflow: hidden;
+  box-shadow: 0 24px 60px rgba(0,0,0,0.3);
+  animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+@keyframes popIn {
+  from { transform: scale(0.6); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+.success-icon-wrap {
+  width: 80px; height: 80px; margin: 0 auto 10px;
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+  border-radius: 50%; display: flex;
+  align-items: center; justify-content: center;
+  animation: pulse 0.6s infinite alternate;
+}
+.success-emoji { font-size: 40px; }
+.success-modal h2 {
+  color: #22c55e; margin: 0 0 8px; font-size: 24px; font-weight: 800;
+}
+.success-badge {
+  display: inline-block; background: linear-gradient(135deg, #3b82f6, #2563eb);
+  color: white; font-size: 13px; padding: 4px 16px;
+  border-radius: 20px; font-weight: 700; margin-bottom: 8px;
+}
+.success-msg { color: #666; font-size: 14px; margin: 0 0 16px; }
+.progress-mini {
+  height: 8px;
+  background: #e2e8f0;
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+.progress-mini-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #22c55e, #16a34a);
+  border-radius: 8px;
+  transition: width 0.8s ease;
+}
+.success-detail {
+  margin: 12px 0;
+  background: #f8fafc;
+  border-radius: 12px;
+  padding: 10px 14px;
+}
+.detail-row {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 12px; color: #666; padding: 3px 0;
+}
+.detail-row span:first-child { font-size: 14px; }
+.auto-back { color: #aaa; font-size: 13px; margin: 10px 0 4px; }
+.modal-btn { margin-top: 8px; }
+
+.confetti-container {
+  position: absolute; top: 0; left: 0; right: 0; height: 100%;
+  pointer-events: none; overflow: hidden; z-index: 0;
+}
+.confetti {
+  position: absolute; top: -10px; border-radius: 2px;
+  animation: confettiFall linear forwards;
+}
+@keyframes confettiFall {
+  0% { transform: translateY(-10px) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(500px) rotate(720deg); opacity: 0; }
+}
+
+.done-view {
+  padding: 20px 16px;
+}
+.done-card {
+  background: white;
+  border-radius: 20px;
+  padding: 20px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+}
+.done-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #f1f5f9;
+}
+.done-icon { font-size: 44px; }
+.done-header h3 { color: #3b82f6; margin: 0; font-size: 14px; }
+.done-header h4 { color: #333; margin: 4px 0 0; font-size: 18px; font-weight: 800; }
+.done-body { margin-bottom: 20px; }
+.done-field {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 10px 0;
+  border-bottom: 1px solid #f8fafc;
+  gap: 10px;
+}
+.done-label { font-size: 13px; color: #888; flex-shrink: 0; font-weight: 600; }
+.done-value { font-size: 13px; color: #333; text-align: right; line-height: 1.5; }
+
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: white;
+  display: flex;
+  justify-content: space-around;
+  padding: 10px 0;
+  border-radius: 20px 20px 0 0;
+  box-shadow: 0 -2px 20px rgba(0,0,0,0.08);
+  z-index: 50;
+}
+.nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  font-size: 11px;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 5px 16px;
+  transition: color 0.2s;
+}
+.nav-item.active {
+  color: #3b82f6;
+  font-weight: 700;
+}
+.nav-item svg {
+  width: 24px;
+  height: 24px;
 }
 </style>

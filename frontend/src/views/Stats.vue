@@ -241,7 +241,7 @@ const loading = ref(true)
 const user = JSON.parse(localStorage.getItem('user') || '{}')
 const userName = computed(() => user.nickname || '小朋友')
 
-const colors = ['#667eea', '#e84393', '#fdcb6e', '#00b894', '#ff7675', '#74b9ff', '#a29bfe', '#fd79a8']
+const colors = ['#3b82f6', '#ef4444', '#f59e0b', '#22c55e', '#8b5cf6', '#06b6d4', '#ec4899', '#6366f1']
 
 const scoreLevel = computed(() => {
   const s = data.report.score
@@ -284,7 +284,7 @@ onMounted(loadData)
 <style scoped>
 .stats-page {
   min-height: 100vh;
-  background: linear-gradient(180deg, #f0f4ff 0%, #fdf2f8 40%, #f0fdf4 100%);
+  background: linear-gradient(180deg, #87CEEB 0%, #E0F4FF 40%, #F0FDF4 100%);
   padding-bottom: 80px;
   font-family: -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif;
 }
@@ -319,7 +319,7 @@ onMounted(loadData)
 .empty-state h3 { color: #333; margin: 0 0 6px; }
 .empty-state p { color: #888; font-size: 14px; margin: 0 0 20px; }
 .btn-primary {
-  background: linear-gradient(135deg, #667eea, #764ba2);
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
   color: white;
   border: none;
   padding: 12px 28px;
@@ -335,7 +335,7 @@ onMounted(loadData)
   background: white;
   border-radius: 20px;
   padding: 20px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.08);
 }
 .report-header {
   display: flex;
@@ -442,10 +442,10 @@ onMounted(loadData)
   border-radius: 10px 10px 0 0;
   transition: height 0.8s ease;
 }
-.bar-short { background: linear-gradient(180deg, #2ed573, #7bed9f); }
-.bar-mid { background: linear-gradient(180deg, #fdcb6e, #ffeaa7); }
-.bar-long { background: linear-gradient(180deg, #ffa502, #ffbe76); }
-.bar-over { background: linear-gradient(180deg, #ff6b6b, #ff8787); }
+.bar-short { background: linear-gradient(180deg, #22c55e, #16a34a); }
+.bar-mid { background: linear-gradient(180deg, #f59e0b, #d97706); }
+.bar-long { background: linear-gradient(180deg, #f97316, #ea580c); }
+.bar-over { background: linear-gradient(180deg, #dc2626, #b91c1c); }
 .bar-label { font-size: 11px; color: #888; font-weight: 600; }
 
 /* Pie */
@@ -618,6 +618,6 @@ onMounted(loadData)
   cursor: pointer;
   padding: 5px 16px;
 }
-.nav-item.active { color: #667eea; font-weight: 700; }
+.nav-item.active { color: #3b82f6; font-weight: 700; }
 .nav-item span:first-child { font-size: 22px; }
 </style>

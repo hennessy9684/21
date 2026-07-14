@@ -345,7 +345,7 @@ onMounted(() => {
 <style scoped>
 .home-page {
   min-height: 100vh;
-  background: linear-gradient(180deg, #f0f4ff 0%, #fdf2f8 40%, #f0fdf4 100%);
+  background: linear-gradient(180deg, #87CEEB 0%, #E0F4FF 40%, #F0FDF4 100%);
   padding-bottom: 80px;
   font-family: -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif;
 }
@@ -385,7 +385,7 @@ onMounted(() => {
 .brand-icon { font-size: 28px; }
 .brand-name { font-size: 17px; font-weight: 800; color: #1a1a2e; }
 .btn-login {
-  background: linear-gradient(135deg, #667eea, #764ba2);
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
   color: white;
   border: none;
   padding: 8px 18px;
@@ -422,20 +422,18 @@ onMounted(() => {
   50% { transform: translateY(-10px); }
 }
 .hero-title {
-  font-size: 36px;
+  font-size: 32px;
   font-weight: 900;
-  color: #1a1a2e;
+  color: #0066CC;
   margin: 0;
-  background: linear-gradient(135deg, #667eea, #e84393);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  line-height: 1.2;
 }
 .hero-subtitle {
-  font-size: 18px;
-  color: #555;
-  margin: 8px 0 6px;
-  font-weight: 700;
+  font-size: 28px;
+  font-weight: 900;
+  color: #0066CC;
+  margin: 0;
+  line-height: 1.2;
 }
 .hero-desc {
   font-size: 14px;
@@ -485,7 +483,7 @@ onMounted(() => {
 .ring-num {
   font-size: 36px;
   font-weight: 900;
-  color: #667eea;
+  color: #3b82f6;
   line-height: 1;
 }
 .ring-total {
@@ -506,28 +504,28 @@ onMounted(() => {
   display: flex;
   align-items: center;
   gap: 10px;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.08);
 }
 .stat-card.highlight {
-  background: linear-gradient(135deg, #fff5e6, #fff0e6);
+  background: linear-gradient(135deg, #eff6ff, #dbeafe);
 }
 .stat-icon { font-size: 24px; }
 .stat-num { font-size: 22px; font-weight: 800; color: #333; }
-.stat-label { font-size: 12px; color: #888; margin-left: auto; }
+.stat-label { font-size: 12px; color: #64748b; margin-left: auto; }
 
 /* Guide section */
 .guide-section {
   padding: 0 20px 20px;
 }
 .guide-card {
-  background: linear-gradient(135deg, #667eea, #764ba2);
-  border-radius: 18px;
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  border-radius: 20px;
   padding: 18px 20px;
   display: flex;
   align-items: center;
   gap: 12px;
   cursor: pointer;
-  box-shadow: 0 6px 20px rgba(102,126,234,0.35);
+  box-shadow: 0 8px 24px rgba(59,130,246,0.35);
   transition: transform 0.2s;
 }
 .guide-card:active { transform: scale(0.98); }
@@ -573,25 +571,28 @@ onMounted(() => {
   text-align: center;
   cursor: pointer;
   transition: all 0.25s;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.06);
   position: relative;
 }
 .day-card:active { transform: scale(0.95); }
 .day-card.done {
-  background: linear-gradient(135deg, #e8f5e9, #c8e6c9);
+  background: linear-gradient(135deg, #22c55e, #16a34a);
 }
 .day-card.today {
-  background: linear-gradient(135deg, #e3f2fd, #bbdefb);
-  border: 2px solid #667eea;
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  border: 2px solid #3b82f6;
+  animation: pulse 1.5s infinite;
 }
+.day-card.done .day-num, .day-card.today .day-num { color: white; }
+.day-card.done .day-icon, .day-card.today .day-icon { filter: brightness(0) invert(1); }
 .day-icon { font-size: 22px; display: block; margin-bottom: 2px; }
 .day-num { font-size: 11px; color: #888; font-weight: 600; }
-.day-check { font-size: 14px; position: absolute; top: 3px; right: 3px; }
+.day-check { font-size: 14px; position: absolute; top: 3px; right: 3px; color: white; }
 .day-tag {
   position: absolute;
   top: 2px;
   right: 2px;
-  background: #667eea;
+  background: #3b82f6;
   color: white;
   font-size: 10px;
   padding: 1px 5px;
@@ -609,23 +610,23 @@ onMounted(() => {
 }
 .task-card {
   background: white;
-  border-radius: 16px;
+  border-radius: 20px;
   padding: 16px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.08);
   cursor: pointer;
   transition: all 0.2s;
 }
 .task-card:active { transform: scale(0.98); }
-.task-card.completed { background: #f5fff5; }
+.task-card.completed { background: #f0fff4; }
 .task-left { display: flex; align-items: center; gap: 12px; flex: 1; }
 .task-icon { font-size: 36px; flex-shrink: 0; }
 .task-title { font-size: 16px; font-weight: 700; color: #333; }
 .task-desc {
   font-size: 12px;
-  color: #888;
+  color: #64748b;
   margin-top: 4px;
   display: -webkit-box;
   -webkit-line-clamp: 1;
@@ -633,9 +634,9 @@ onMounted(() => {
   overflow: hidden;
 }
 .task-status { flex-shrink: 0; margin-left: 10px; }
-.task-done { color: #2ed573; font-weight: 700; font-size: 14px; }
+.task-done { color: #22c55e; font-weight: 700; font-size: 14px; }
 .task-go {
-  background: linear-gradient(135deg, #667eea, #764ba2);
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
   color: white;
   padding: 6px 14px;
   border-radius: 15px;
@@ -735,7 +736,7 @@ onMounted(() => {
   cursor: pointer;
   padding: 5px 20px;
 }
-.nav-item.active { color: #667eea; font-weight: 700; }
+.nav-item.active { color: #3b82f6; font-weight: 700; }
 .nav-item span:first-child { font-size: 22px; }
 
 /* 快捷入口 */
