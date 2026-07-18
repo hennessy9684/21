@@ -238,9 +238,9 @@ def achievements(request):
     # 统计各维度数据
     total_duration = 0
     for r in records:
-        dur = r.online_duration.strip() if r.online_duration else ''
-        hrs = 0.5 if dur == '0-1小时' else (2 if dur == '1-3小时' else (4 if dur == '3-5小时' else (6 if dur == '5小时以上' else 0)))
-        total_duration += hrs
+        raw_dur = r.online_duration.strip() if r.online_duration else ''
+        _, hours = _normalize_duration(raw_dur)
+        total_duration += hours
 
     all_activities = []
     for r in records:
@@ -378,11 +378,16 @@ def checkin(request):
     if day < 1 or day > 21:
         return Response({'error': '天数必须在1-21之间'}, status=status.HTTP_400_BAD_REQUEST)
 
-    # 2. 重复打卡校验
+    # 2. 当日已打卡校验（一天只能打一次卡）
+    today = timezone.localdate()
+    if CheckInRecord.objects.filter(user=request.user, date=today).exists():
+        return Response({'error': '今天已经打过卡了，明天再来吧～'}, status=status.HTTP_400_BAD_REQUEST)
+
+    # 3. 重复打卡校验
     if CheckInRecord.objects.filter(user=request.user, day=day).exists():
         return Response({'error': f'第{day}天已打卡，不可重复提交'}, status=status.HTTP_400_BAD_REQUEST)
 
-    # 3. 顺序校验：只能按顺序打卡（最多打下一关）
+    # 4. 顺序校验：只能按顺序打卡（最多打下一关）
     max_done = CheckInRecord.objects.filter(user=request.user).aggregate(
         m=dj_models.Max('day')
     )['m'] or 0
@@ -393,7 +398,7 @@ def checkin(request):
             'next_day': max_done + 1,
         }, status=status.HTTP_400_BAD_REQUEST)
 
-    # 4. 问卷字段校验
+    # 5. 问卷字段校验
     answer = serializer.validated_data.get('answer', '').strip()
     online_duration = serializer.validated_data.get('online_duration', '')
     online_activities = serializer.validated_data.get('online_activities', '')
@@ -469,6 +474,23 @@ def checkin_stats(request):
     })
 
 
+def _normalize_duration(dur_str):
+    """将前端传来的时长值归一化为统计用的标准键名"""
+    mapping = {
+        '少于1小时': ('0-1小时', 0.5),
+        '1-2小时': ('1-3小时', 1.5),
+        '2-3小时': ('1-3小时', 2.5),
+        '超过3小时': ('3-5小时', 4),
+        # 兼容旧值
+        '0-1小时': ('0-1小时', 0.5),
+        '1-3小时': ('1-3小时', 2),
+        '3-5小时': ('3-5小时', 4),
+        '5小时以上': ('5小时以上', 6),
+    }
+    dur_str = dur_str.strip() if dur_str else ''
+    return mapping.get(dur_str, (dur_str, 0))
+
+
 @csrf_exempt
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
@@ -480,13 +502,13 @@ def usage_stats(request):
     duration_map = {'0-1小时': 0, '1-3小时': 0, '3-5小时': 0, '5小时以上': 0}
     duration_trend = []  # 每天时长趋势
     for r in records:
-        dur = r.online_duration.strip() if r.online_duration else ''
-        duration_map[dur] = duration_map.get(dur, 0) + 1
-        hours = 0.5 if dur == '0-1小时' else (2 if dur == '1-3小时' else (4 if dur == '3-5小时' else (6 if dur == '5小时以上' else 0)))
+        raw_dur = r.online_duration.strip() if r.online_duration else ''
+        dur_key, hours = _normalize_duration(raw_dur)
+        duration_map[dur_key] = duration_map.get(dur_key, 0) + 1
         duration_trend.append({
             'day': r.day,
             'title': DailyTopic.objects.get(day=r.day).title if DailyTopic.objects.filter(day=r.day).exists() else f'第{r.day}天',
-            'duration': dur or '-',
+            'duration': raw_dur or '-',
             'hours': hours,
         })
 
@@ -526,8 +548,9 @@ def usage_stats(request):
         week_records = [r for r in records if start <= r.day <= end]
         week_dur = {'0-1小时': 0, '1-3小时': 0, '3-5小时': 0, '5小时以上': 0}
         for r in week_records:
-            dur = r.online_duration.strip() if r.online_duration else ''
-            week_dur[dur] = week_dur.get(dur, 0) + 1
+            raw_dur = r.online_duration.strip() if r.online_duration else ''
+            dur_key, _ = _normalize_duration(raw_dur)
+            week_dur[dur_key] = week_dur.get(dur_key, 0) + 1
 
         week_excessive = week_dur.get('3-5小时', 0) + week_dur.get('5小时以上', 0)
         week_total = len(week_records)

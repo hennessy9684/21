@@ -181,7 +181,7 @@
           <div v-if="currentQuestionIndex === 2" class="question-block">
             <div class="question-header">
               <span class="question-num">3</span>
-              <span class="question-text">今天我是否因为上网影响了以下事情？</span>
+              <span class="question-text">今天上网有没有影响到你的学习或生活？</span>
               <span class="question-tag">单选</span>
             </div>
             <div class="option-grid">
@@ -321,6 +321,15 @@
         </div>
       </section>
 
+      <section class="form-section" v-else-if="checkedInToday && !stats.completed">
+        <div class="all-done-card" style="background: #f0fdf4; border: 2px solid #bbf7d0;">
+          <span class="all-done-icon">✅</span>
+          <h3>今日已打卡</h3>
+          <p>今天已经打过卡了，明天再来继续吧～</p>
+          <button class="btn-primary" @click="goHome">返回首页</button>
+        </div>
+      </section>
+
       <section class="form-section" v-else-if="stats.completed">
         <div class="all-done-card">
           <span class="all-done-icon">🏆</span>
@@ -341,35 +350,20 @@
     </div>
 
     <nav class="bottom-nav">
-      <button class="nav-item" :class="{ active: activeTab === 'checkin' }" @click="activeTab = 'checkin'">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-          <line x1="16" y1="2" x2="16" y2="6"/>
-          <line x1="8" y1="2" x2="8" y2="6"/>
-          <line x1="3" y1="10" x2="21" y2="10"/>
-        </svg>
-        <span>今日打卡</span>
+      <button class="nav-item" @click="router.push('/')">
+        <span>🏠</span><span>首页</span>
       </button>
-      <button class="nav-item" :class="{ active: activeTab === 'history' }" @click="activeTab = 'history'; router.push('/stats')">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <line x1="18" y1="20" x2="18" y2="10"/>
-          <line x1="12" y1="20" x2="12" y2="4"/>
-          <line x1="6" y1="20" x2="6" y2="14"/>
-        </svg>
-        <span>打卡记录</span>
+      <button class="nav-item active">
+        <span>📅</span><span>打卡</span>
       </button>
-      <button class="nav-item" :class="{ active: activeTab === 'achievements' }" @click="activeTab = 'achievements'; router.push('/my')">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
-        </svg>
-        <span>我的成就</span>
+      <button class="nav-item" @click="router.push('/stats')">
+        <span>📊</span><span>统计</span>
       </button>
-      <button class="nav-item" :class="{ active: activeTab === 'profile' }" @click="activeTab = 'profile'; router.push('/my')">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-          <circle cx="12" cy="7" r="4"/>
-        </svg>
-        <span>个人中心</span>
+      <button class="nav-item" @click="router.push('/messages')">
+        <span>💬</span><span>留言</span>
+      </button>
+      <button class="nav-item" @click="router.push('/my')">
+        <span>👤</span><span>我的</span>
       </button>
     </nav>
   </div>
@@ -397,8 +391,8 @@ const countdownText = ref('即将返回首页...')
 const lastSubmit = reactive({ duration: '', activities: '', mood: '' })
 const viewingRecord = ref(null)
 const selectedActivities = ref([])
-const activeTab = ref('checkin')
 const currentQuestionIndex = ref(0)
+const checkedInToday = ref(false)
 
 const form = reactive({
   online_duration: '',
@@ -493,11 +487,7 @@ async function handleQuizSubmit() {
 }
 
 function quizRetry() {
-  const init = {}
-  quizQuestions.value.forEach(q => { init[q.id] = '' })
-  quizAnswerMap.value = init
-  quizResult.value = null
-  quizSubmitted.value = false
+  loadQuiz()
 }
 
 const durationOptions = [
@@ -531,6 +521,7 @@ const maxAvailableDay = computed(() => {
 })
 
 const currentTopic = computed(() => {
+  if (checkedInToday.value) return null
   const targetDay = currentDay.value || maxAvailableDay.value
   if (!targetDay || targetDay > 21) return null
   if (checkins[targetDay]) return null
@@ -635,6 +626,10 @@ async function loadData() {
     topics.value = topicsRes.data
     checkinRes.data.forEach(r => { checkins[r.day] = r })
     Object.assign(stats, statsRes.data)
+
+    // 检查今天是否已经打过卡
+    const todayStr = new Date().toISOString().split('T')[0]
+    checkedInToday.value = checkinRes.data.some(r => r.date === todayStr)
   } catch (e) {
     console.error(e)
   }
@@ -691,6 +686,7 @@ async function handleSubmit() {
     stats.total_days++
     stats.progress = Math.round(stats.total_days / 21 * 100)
     if (stats.total_days > stats.streak_days) stats.streak_days = stats.total_days
+    checkedInToday.value = true
 
     lastSubmit.duration = form.online_duration
     lastSubmit.activities = form.online_activities
@@ -1531,21 +1527,14 @@ onMounted(async () => {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
+  gap: 2px;
   background: none;
   border: none;
-  font-size: 11px;
-  color: #94a3b8;
+  font-size: 12px;
+  color: #999;
   cursor: pointer;
-  padding: 5px 16px;
-  transition: color 0.2s;
+  padding: 5px 20px;
 }
-.nav-item.active {
-  color: #3b82f6;
-  font-weight: 700;
-}
-.nav-item svg {
-  width: 24px;
-  height: 24px;
-}
+.nav-item.active { color: #3b82f6; font-weight: 700; }
+.nav-item span:first-child { font-size: 22px; }
 </style>
