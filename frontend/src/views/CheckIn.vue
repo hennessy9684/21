@@ -448,19 +448,28 @@ async function loadQuiz() {
 
 function loadDefaultQuiz(day) {
   const defaultQuizzes = [
-    { id: 1001, question: '以下哪个密码最安全？', options: { A: '123456', B: 'password', C: 'W@b#5e$8q', D: 'abcdef' } },
-    { id: 1002, question: '收到陌生人发来的链接应该怎么做？', options: { A: '直接点击', B: '先确认来源安全', C: '转发给朋友', D: '保存下来' } },
-    { id: 1003, question: '在公共WiFi环境下，以下哪种做法最安全？', options: { A: '网上购物', B: '登录银行账户', C: '只浏览新闻', D: '发送密码' } },
-    { id: 1004, question: '网络诈骗通常会用什么方式引诱你？', options: { A: '告诉你中大奖', B: '要求转账', C: '冒充客服', D: '以上都是' } },
-    { id: 1005, question: '个人隐私信息包括哪些？', options: { A: '手机号', B: '身份证号', C: '家庭住址', D: '以上都是' } },
-    { id: 1006, question: '遇到网络暴力应该怎么做？', options: { A: '互骂回去', B: '沉默忍受', C: '保留证据并举报', D: '告诉所有人' } },
-    { id: 1007, question: '密码应该多长时间更换一次？', options: { A: '从不更换', B: '半年一次', C: '一年一次', D: '三个月一次' } },
-    { id: 1008, question: '钓鱼网站的特征是什么？', options: { A: '网址很像正规网站', B: '要求输入账号密码', C: '页面粗糙', D: '以上都是' } },
-    { id: 1009, question: '游戏中陌生人要你充值应该怎么做？', options: { A: '立即充值', B: '拒绝并举报', C: '先充一点试试', D: '借给他钱' } },
-    { id: 1010, question: '刷短视频遇到不良内容应该？', options: { A: '继续看', B: '举报并屏蔽', C: '分享给别人', D: '下载保存' } },
+    { id: -1, question: '以下哪个密码最安全？', options: { A: '123456', B: 'password', C: 'W@b#5e$8q', D: 'abcdef' }, answer: 'C', explanation: '包含大小写字母、数字和特殊符号的密码最安全', isDefault: true },
+    { id: -2, question: '收到陌生人发来的链接应该怎么做？', options: { A: '直接点击', B: '先确认来源安全', C: '转发给朋友', D: '保存下来' }, answer: 'B', explanation: '陌生链接可能包含病毒，应先确认来源安全', isDefault: true },
+    { id: -3, question: '在公共WiFi环境下，以下哪种做法最安全？', options: { A: '网上购物', B: '登录银行账户', C: '只浏览新闻', D: '发送密码' }, answer: 'C', explanation: '公共WiFi下只适合浏览公开内容', isDefault: true },
+    { id: -4, question: '网络诈骗通常会用什么方式引诱你？', options: { A: '告诉你中大奖', B: '要求转账', C: '冒充客服', D: '以上都是' }, answer: 'D', explanation: '这些都是常见的诈骗手法', isDefault: true },
+    { id: -5, question: '个人隐私信息包括哪些？', options: { A: '手机号', B: '身份证号', C: '家庭住址', D: '以上都是' }, answer: 'D', explanation: '手机号、身份证号、家庭住址都是重要的隐私信息', isDefault: true },
+    { id: -6, question: '遇到网络暴力应该怎么做？', options: { A: '互骂回去', B: '沉默忍受', C: '保留证据并举报', D: '告诉所有人' }, answer: 'C', explanation: '保留证据并举报是最正确的处理方式', isDefault: true },
+    { id: -7, question: '密码应该多长时间更换一次？', options: { A: '从不更换', B: '半年一次', C: '一年一次', D: '三个月一次' }, answer: 'D', explanation: '建议每三个月更换一次密码', isDefault: true },
+    { id: -8, question: '钓鱼网站的特征是什么？', options: { A: '网址很像正规网站', B: '要求输入账号密码', C: '页面粗糙', D: '以上都是' }, answer: 'D', explanation: '这些都是钓鱼网站常见特征', isDefault: true },
+    { id: -9, question: '游戏中陌生人要你充值应该怎么做？', options: { A: '立即充值', B: '拒绝并举报', C: '先充一点试试', D: '借给他钱' }, answer: 'B', explanation: '应拒绝陌生人的充值要求并举报', isDefault: true },
+    { id: -10, question: '刷短视频遇到不良内容应该？', options: { A: '继续看', B: '举报并屏蔽', C: '分享给别人', D: '下载保存' }, answer: 'B', explanation: '遇到不良内容应举报并屏蔽', isDefault: true },
+    { id: -11, question: '以下哪个是健康的上网习惯？', options: { A: '通宵上网', B: '定时休息远眺', C: '边吃饭边看屏幕', D: '走路看手机' }, answer: 'B', explanation: '定时休息远眺有助于保护视力', isDefault: true },
+    { id: -12, question: '网友约你见面应该怎么做？', options: { A: '立刻答应', B: '独自赴约', C: '告诉家长并拒绝', D: '偷偷去' }, answer: 'C', explanation: '未成年人不应与网友私下见面', isDefault: true },
+    { id: -13, question: '手机收到陌生链接应该？', options: { A: '点开看看', B: '转发给朋友', C: '不点击并删除', D: '回复问是谁' }, answer: 'C', explanation: '陌生链接可能含有病毒或钓鱼页面', isDefault: true },
+    { id: -14, question: '以下哪种做法能保护个人隐私？', options: { A: '所有平台用同一密码', B: '不随意透露个人信息', C: '把密码告诉好友', D: '用生日做密码' }, answer: 'B', explanation: '不随意透露个人信息是保护隐私的基本做法', isDefault: true },
+    { id: -15, question: '发现网上有人散布谣言应该？', options: { A: '帮忙转发', B: '不传谣并举报', C: '相信并告诉别人', D: '不管' }, answer: 'B', explanation: '不信谣不传谣，并积极举报', isDefault: true },
   ]
-  const startIdx = (day - 1) % 6
-  quizQuestions.value = defaultQuizzes.slice(startIdx, startIdx + 5)
+  const startIdx = ((day - 1) * 5) % defaultQuizzes.length
+  const selected = []
+  for (let i = 0; i < 5; i++) {
+    selected.push(defaultQuizzes[(startIdx + i) % defaultQuizzes.length])
+  }
+  quizQuestions.value = selected.map(q => ({ id: q.id, question: q.question, options: q.options, answer: q.answer, explanation: q.explanation, isDefault: true }))
   const init = {}
   quizQuestions.value.forEach(q => { init[q.id] = '' })
   quizAnswerMap.value = init
@@ -473,8 +482,31 @@ async function handleQuizSubmit() {
     errorMsg.value = '请完成所有题目再提交'
     return
   }
-  const answers = quizQuestions.value.map(q => ({ id: q.id, answer: quizAnswerMap.value[q.id] }))
+
   const day = currentDay.value || (stats.total_days + 1)
+
+  // 默认题目（本地题库）：前端直接判断对错，不请求后端
+  if (quizQuestions.value.length > 0 && quizQuestions.value[0].isDefault) {
+    let correctCount = 0
+    const results = quizQuestions.value.map(q => {
+      const userAnswer = quizAnswerMap.value[q.id]
+      const isCorrect = q.answer === userAnswer
+      if (isCorrect) correctCount++
+      return {
+        id: q.id, question: q.question, q_type: 'choice',
+        user_answer: userAnswer, correct_answer: q.answer,
+        is_correct: isCorrect, explanation: q.explanation || '',
+      }
+    })
+    const total = quizQuestions.value.length
+    const score = Math.round(correctCount / total * 100)
+    quizResult.value = { total, correct: correctCount, score, results }
+    quizSubmitted.value = true
+    return
+  }
+
+  // 服务端题目：提交到后端评分
+  const answers = quizQuestions.value.map(q => ({ id: q.id, answer: quizAnswerMap.value[q.id] }))
   try {
     quizSubmitted.value = true
     const res = await submitQuizApi(answers, day)
