@@ -19,6 +19,12 @@
         <div class="status-info">
           <h2>{{ statusText }}</h2>
           <p>{{ statusDesc }}</p>
+          <button v-if="profile.auth_status === 'approved'" class="btn-goto-checkin" @click="router.push('/checkin')">
+            开始打卡 →
+          </button>
+          <button v-if="profile.auth_status === 'rejected'" class="btn-goto-checkin" @click="handleSubmit">
+            重新提交认证
+          </button>
         </div>
       </div>
     </div>
@@ -47,12 +53,13 @@
               <span>🏫</span><span>学校名称</span>
               <span class="required">*</span>
             </label>
-            <input
+            <select
               v-model="form.school"
-              type="text"
               class="form-input"
-              placeholder="请输入学校名称"
-            />
+            >
+              <option value="" disabled>请选择学校</option>
+              <option v-for="s in schoolList" :key="s" :value="s">{{ s }}</option>
+            </select>
           </div>
 
           <div class="form-group">
@@ -70,17 +77,16 @@
 
           <div class="form-group">
             <label class="form-label">
-              <span>🆔</span><span>身份证号</span>
+              <span>🎓</span><span>学号</span>
               <span class="required">*</span>
             </label>
             <input
-              v-model="form.id_card"
+              v-model="form.student_id"
               type="text"
               class="form-input"
-              placeholder="请输入18位身份证号"
-              maxlength="18"
+              placeholder="请输入学号"
             />
-            <p class="form-hint">您的身份证号将被加密保存，仅用于身份验证</p>
+            <p class="form-hint">请输入您的学生证号，用于身份验证</p>
           </div>
 
           <div v-if="profile.auth_status === 'rejected'" class="reject-info">
@@ -113,8 +119,8 @@
           <span class="info-value">{{ profile.class_name }}</span>
         </div>
         <div class="info-item">
-          <span class="info-label">身份证号</span>
-          <span class="info-value">{{ maskIdCard(profile.id_card) }}</span>
+          <span class="info-label">学号</span>
+          <span class="info-value">{{ profile.student_id }}</span>
         </div>
         <div class="info-item">
           <span class="info-label">审核时间</span>
@@ -158,19 +164,20 @@
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { getProfile, submitAuth } from '../api/index.js'
+import { getProfile, submitAuth, getSchools } from '../api/index.js'
 
 const router = useRouter()
 
 const profile = ref(null)
 const submitting = ref(false)
 const errorMsg = ref('')
+const schoolList = ref([])
 
 const form = reactive({
   real_name: '',
   school: '',
   class_name: '',
-  id_card: '',
+  student_id: '',
 })
 
 const statusText = computed(() => {
@@ -200,11 +207,6 @@ const showForm = computed(() => {
   return profile.value.auth_status === 'unverified' || profile.value.auth_status === 'rejected'
 })
 
-function maskIdCard(id) {
-  if (!id || id.length !== 18) return ''
-  return id.slice(0, 4) + '**********' + id.slice(-4)
-}
-
 function formatDate(dateStr) {
   if (!dateStr) return ''
   const date = new Date(dateStr)
@@ -219,7 +221,7 @@ async function loadProfile() {
       form.real_name = profile.value.real_name || ''
       form.school = profile.value.school || ''
       form.class_name = profile.value.class_name || ''
-      form.id_card = ''
+      form.student_id = ''
     }
   } catch (e) {
     console.error('加载资料失败:', e)
@@ -241,12 +243,8 @@ async function handleSubmit() {
     errorMsg.value = '请输入班级'
     return
   }
-  if (!form.id_card.trim()) {
-    errorMsg.value = '请输入身份证号'
-    return
-  }
-  if (form.id_card.length !== 18) {
-    errorMsg.value = '请输入有效的18位身份证号'
+  if (!form.student_id.trim()) {
+    errorMsg.value = '请输入学号'
     return
   }
 
@@ -256,10 +254,13 @@ async function handleSubmit() {
       real_name: form.real_name.trim(),
       school: form.school.trim(),
       class_name: form.class_name.trim(),
-      id_card: form.id_card.trim(),
+      student_id: form.student_id.trim(),
     })
-    alert('认证申请已提交，等待管理员审核')
+    // 提交成功后跳转打卡页
     await loadProfile()
+    if (profile.value.auth_status === 'approved') {
+      router.push('/checkin')
+    }
   } catch (e) {
     const errData = e.response?.data
     errorMsg.value = errData?.error || '提交失败，请稍后重试'
@@ -267,8 +268,18 @@ async function handleSubmit() {
   submitting.value = false
 }
 
+async function loadSchools() {
+  try {
+    const res = await getSchools()
+    schoolList.value = res.data
+  } catch (e) {
+    console.error('加载学校列表失败:', e)
+  }
+}
+
 onMounted(() => {
   loadProfile()
+  loadSchools()
 })
 </script>
 
@@ -366,6 +377,20 @@ onMounted(() => {
   font-size: 13px;
   color: #666;
 }
+
+.btn-goto-checkin {
+  margin-top: 10px;
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  color: white;
+  border: none;
+  padding: 8px 20px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+.btn-goto-checkin:hover { transform: translateY(-2px); }
 
 .form-section, .info-section {
   padding: 0 16px;

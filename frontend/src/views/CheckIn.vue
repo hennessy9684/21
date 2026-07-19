@@ -78,6 +78,36 @@
     </div>
 
     <div v-else>
+      <!-- 个人信息/学号认证未完成拦截 -->
+      <div v-if="!readyToCheckin" class="checkin-block">
+        <div class="block-card">
+          <div class="block-icon">🔒</div>
+          <h2 class="block-title">尚未满足打卡条件</h2>
+          <p class="block-desc">请先完成以下步骤后方可开始打卡：</p>
+          <div class="block-steps">
+            <div class="block-step" :class="{ done: profileReady, current: !profileReady }">
+              <span class="step-num">{{ profileReady ? '✅' : '1' }}</span>
+              <div>
+                <span class="step-title">完善个人信息</span>
+                <span class="step-desc" v-if="!profileReady">填写昵称、年龄、年级、性别</span>
+              </div>
+            </div>
+            <div class="step-connector" :class="{ done: profileReady }"></div>
+            <div class="block-step" :class="{ done: authReady, current: profileReady && !authReady }">
+              <span class="step-num">{{ authReady ? '✅' : '2' }}</span>
+              <div>
+                <span class="step-title">学号认证</span>
+                <span class="step-desc" v-if="!authReady && profileReady">提交学号信息并通过审核</span>
+              </div>
+            </div>
+          </div>
+          <button v-if="!profileReady" class="btn-block-action" @click="router.push('/my')">先去完善个人信息 →</button>
+          <button v-else-if="!authReady" class="btn-block-action" @click="router.push('/auth')">去学号认证 →</button>
+          <button v-else class="btn-block-action" @click="checkReadiness">刷新状态</button>
+        </div>
+      </div>
+
+      <div v-else>
       <section class="hero-section">
         <div class="hero-content">
           <div class="hero-text">
@@ -348,6 +378,7 @@
         </div>
       </section>
     </div>
+    </div>
 
     <nav class="bottom-nav">
       <button class="nav-item" @click="router.push('/')">
@@ -372,7 +403,7 @@
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { getTopics, getCheckIns, submitCheckIn, getCheckInStats, getQuizQuestions, submitQuiz as submitQuizApi } from '../api/index.js'
+import { getTopics, getCheckIns, submitCheckIn, getCheckInStats, getQuizQuestions, submitQuiz as submitQuizApi, getProfile } from '../api/index.js'
 
 const router = useRouter()
 const route = useRoute()
@@ -393,6 +424,9 @@ const viewingRecord = ref(null)
 const selectedActivities = ref([])
 const currentQuestionIndex = ref(0)
 const checkedInToday = ref(false)
+const readyToCheckin = ref(false)
+const profileReady = ref(false)
+const authReady = ref(false)
 
 const form = reactive({
   online_duration: '',
@@ -452,7 +486,7 @@ function loadDefaultQuiz(day) {
     { id: -2, question: '收到陌生人发来的链接应该怎么做？', options: { A: '直接点击', B: '先确认来源安全', C: '转发给朋友', D: '保存下来' }, answer: 'B', explanation: '陌生链接可能包含病毒，应先确认来源安全', isDefault: true },
     { id: -3, question: '在公共WiFi环境下，以下哪种做法最安全？', options: { A: '网上购物', B: '登录银行账户', C: '只浏览新闻', D: '发送密码' }, answer: 'C', explanation: '公共WiFi下只适合浏览公开内容', isDefault: true },
     { id: -4, question: '网络诈骗通常会用什么方式引诱你？', options: { A: '告诉你中大奖', B: '要求转账', C: '冒充客服', D: '以上都是' }, answer: 'D', explanation: '这些都是常见的诈骗手法', isDefault: true },
-    { id: -5, question: '个人隐私信息包括哪些？', options: { A: '手机号', B: '身份证号', C: '家庭住址', D: '以上都是' }, answer: 'D', explanation: '手机号、身份证号、家庭住址都是重要的隐私信息', isDefault: true },
+    { id: -5, question: '个人隐私信息包括哪些？', options: { A: '手机号', B: '学号', C: '家庭住址', D: '以上都是' }, answer: 'D', explanation: '手机号、学号、家庭住址都是重要的隐私信息', isDefault: true },
     { id: -6, question: '遇到网络暴力应该怎么做？', options: { A: '互骂回去', B: '沉默忍受', C: '保留证据并举报', D: '告诉所有人' }, answer: 'C', explanation: '保留证据并举报是最正确的处理方式', isDefault: true },
     { id: -7, question: '密码应该多长时间更换一次？', options: { A: '从不更换', B: '半年一次', C: '一年一次', D: '三个月一次' }, answer: 'D', explanation: '建议每三个月更换一次密码', isDefault: true },
     { id: -8, question: '钓鱼网站的特征是什么？', options: { A: '网址很像正规网站', B: '要求输入账号密码', C: '页面粗糙', D: '以上都是' }, answer: 'D', explanation: '这些都是钓鱼网站常见特征', isDefault: true },
@@ -648,6 +682,18 @@ function confettiStyle(i) {
   }
 }
 
+async function checkReadiness() {
+  try {
+    const res = await getProfile()
+    const p = res.data
+    profileReady.value = !!(p.nickname && p.age && p.grade && p.gender)
+    authReady.value = p.auth_status === 'approved'
+    readyToCheckin.value = profileReady.value && authReady.value
+  } catch (e) {
+    console.error('检查打卡资格失败:', e)
+  }
+}
+
 async function loadData() {
   try {
     const [topicsRes, checkinRes, statsRes] = await Promise.all([
@@ -748,8 +794,11 @@ async function handleSubmit() {
 }
 
 onMounted(async () => {
-  await loadData()
-  loadQuiz()
+  await checkReadiness()
+  if (readyToCheckin.value) {
+    await loadData()
+    loadQuiz()
+  }
 })
 </script>
 
@@ -760,6 +809,62 @@ onMounted(async () => {
   padding-bottom: 80px;
   font-family: -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif;
 }
+
+/* 打卡拦截提示 */
+.checkin-block {
+  padding: 40px 16px;
+}
+.block-card {
+  background: white;
+  border-radius: 20px;
+  padding: 32px 24px;
+  text-align: center;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+}
+.block-icon { font-size: 48px; margin-bottom: 12px; }
+.block-title { font-size: 20px; font-weight: 800; color: #333; margin: 0 0 8px; }
+.block-desc { font-size: 14px; color: #666; margin: 0 0 24px; }
+.block-steps { margin-bottom: 24px; }
+.block-step {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: #f8f9fa;
+  margin-bottom: 0;
+  text-align: left;
+}
+.block-step.done { background: #f0fdf4; }
+.block-step.current { background: #eff6ff; border: 2px solid #3b82f6; }
+.step-num {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  background: #e5e7eb;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 700; color: #666;
+  flex-shrink: 0;
+}
+.block-step.current .step-num { background: #3b82f6; color: white; }
+.block-step.done .step-num { background: #22c55e; }
+.step-title { font-size: 15px; font-weight: 700; color: #333; display: block; }
+.step-desc { font-size: 12px; color: #999; margin-top: 2px; display: block; }
+.step-connector {
+  width: 2px; height: 20px;
+  background: #e5e7eb;
+  margin-left: 31px;
+}
+.step-connector.done { background: #22c55e; }
+.btn-block-action {
+  width: 100%;
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  color: white; border: none;
+  padding: 14px; border-radius: 14px;
+  font-size: 16px; font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+.btn-block-action:hover { transform: translateY(-2px); }
 
 .top-bar {
   display: flex;

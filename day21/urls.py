@@ -13,6 +13,7 @@ urlpatterns = [
     path('quiz/submit/', views.quiz_submit, name='quiz_submit'),
     path('quiz/history/', views.quiz_history, name='quiz_history'),
     path('auth/submit/', views.submit_auth, name='submit_auth'),
+    path('schools/', views.schools, name='schools'),
     path('admin/auth-review/', views.admin_auth_review, name='admin_auth_review'),
 
     # 打卡

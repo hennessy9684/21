@@ -1131,7 +1131,7 @@ def admin_auth_view(request):
                         user=profile.user,
                         title='实名认证审核通过',
                         content='恭喜您！实名认证已通过审核',
-                        type='auth',
+                        n_type='auth',
                     )
 
                 elif action == 'reject':
@@ -1145,7 +1145,7 @@ def admin_auth_view(request):
                         user=profile.user,
                         title='实名认证审核未通过',
                         content=f'您的实名认证申请未通过，原因：{reason}',
-                        type='auth',
+                        n_type='auth',
                     )
 
         return redirect('admin_auth')
@@ -1158,11 +1158,11 @@ def admin_auth_view(request):
 
     auth_data = []
     for p in profiles:
-        id_card_mask = p.id_card[:4] + '**********' + p.id_card[-4:] if p.id_card else ''
+        student_id = p.student_id or ''
         total_checkins = CheckInRecord.objects.filter(user=p.user).count()
         auth_data.append({
             'profile': p,
-            'id_card_mask': id_card_mask,
+            'student_id': student_id,
             'total_checkins': total_checkins,
         })
 

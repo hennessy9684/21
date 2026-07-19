@@ -156,7 +156,7 @@ async function handleRegister() {
         const res = await register(regForm.phone, regForm.code, regForm.password, regForm.nickname)
         localStorage.setItem('user', JSON.stringify(res.data.user))
         localStorage.setItem('token', res.data.token)
-        router.push('/')
+        router.push('/my')  // 注册后先完善个人信息
   } catch (e) {
     regError.value = e.response?.data?.error || '注册失败'
   }

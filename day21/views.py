@@ -167,6 +167,14 @@ def profile(request):
 @csrf_exempt
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
+def schools(request):
+    """获取所有管理员管理的学校列表（供用户选择）"""
+    if not request.user.is_authenticated:
+        return Response({'error': '未登录'}, status=status.HTTP_401_UNAUTHORIZED)
+    qs = UserProfile.objects.filter(role='admin').exclude(managed_school='').values_list('managed_school', flat=True).distinct()
+    return Response(sorted(list(qs)))
+
+
 def submit_auth(request):
     """提交实名认证申请"""
     try:
@@ -184,7 +192,7 @@ def submit_auth(request):
     real_name = data.get('real_name', '').strip()
     school = data.get('school', '').strip()
     class_name = data.get('class_name', '').strip()
-    id_card = data.get('id_card', '').strip()
+    student_id = data.get('student_id', '').strip()
 
     if not real_name:
         return Response({'error': '请输入真实姓名'}, status=status.HTTP_400_BAD_REQUEST)
@@ -192,13 +200,13 @@ def submit_auth(request):
         return Response({'error': '请输入学校名称'}, status=status.HTTP_400_BAD_REQUEST)
     if not class_name:
         return Response({'error': '请输入班级'}, status=status.HTTP_400_BAD_REQUEST)
-    if not id_card or len(id_card) != 18:
-        return Response({'error': '请输入有效的身份证号'}, status=status.HTTP_400_BAD_REQUEST)
+    if not student_id:
+        return Response({'error': '请输入学号'}, status=status.HTTP_400_BAD_REQUEST)
 
     profile.real_name = real_name
     profile.school = school
     profile.class_name = class_name
-    profile.id_card = id_card
+    profile.student_id = student_id
     profile.auth_status = 'pending'
     profile.auth_reason = ''
     profile.auth_time = None
@@ -209,7 +217,7 @@ def submit_auth(request):
         user=request.user,
         title='实名认证申请已提交',
         content=f'您的实名认证申请已提交，请等待管理员审核',
-        type='auth',
+        n_type='auth',
     )
 
     return Response({
@@ -371,6 +379,13 @@ def checkin(request):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     day = serializer.validated_data['day']
+
+    # === 前置校验：个人信息 + 学号认证 ===
+    profile = request.user.profile
+    if not profile.nickname or not profile.age or not profile.grade or not profile.gender:
+        return Response({'error': '请先完善个人信息再打卡', 'code': 'profile_incomplete'}, status=status.HTTP_400_BAD_REQUEST)
+    if profile.auth_status != 'approved':
+        return Response({'error': '请先完成学号认证再打卡', 'code': 'auth_required'}, status=status.HTTP_400_BAD_REQUEST)
 
     # === 校验逻辑 ===
 
@@ -864,7 +879,6 @@ def admin_auth_review(request):
 
         data = []
         for p in profiles:
-            id_card_mask = p.id_card[:4] + '**********' + p.id_card[-4:] if p.id_card else ''
             data.append({
                 'id': p.id,
                 'user_id': p.user.id,
@@ -874,7 +888,7 @@ def admin_auth_review(request):
                 'real_name': p.real_name,
                 'school': p.school,
                 'class_name': p.class_name,
-                'id_card': id_card_mask,
+                'student_id': p.student_id,
                 'auth_status': p.auth_status,
                 'auth_status_text': dict(UserProfile.auth_status.field.choices).get(p.auth_status, p.auth_status),
                 'auth_reason': p.auth_reason,
@@ -906,7 +920,7 @@ def admin_auth_review(request):
             user=profile.user,
             title='实名认证审核通过',
             content='恭喜您！实名认证已通过审核',
-            type='auth',
+            n_type='auth',
         )
         return Response({'message': '审核通过', 'status': 'approved'})
 
@@ -921,7 +935,7 @@ def admin_auth_review(request):
             user=profile.user,
             title='实名认证审核未通过',
             content=f'您的实名认证申请未通过，原因：{reason}',
-            type='auth',
+            n_type='auth',
         )
         return Response({'message': '已拒绝', 'status': 'rejected'})
 

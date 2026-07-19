@@ -23,7 +23,7 @@ class UserProfile(models.Model):
     real_name = models.CharField('真实姓名', max_length=50, blank=True, default='')
     school = models.CharField('学校', max_length=100, blank=True, default='')
     class_name = models.CharField('班级', max_length=50, blank=True, default='')
-    id_card = models.CharField('身份证号', max_length=18, blank=True, default='')
+    student_id = models.CharField('学号', max_length=30, blank=True, default='')
     auth_status = models.CharField('实名认证状态', max_length=20, default='unverified', choices=[
         ('unverified', '未认证'),
         ('pending', '审核中'),

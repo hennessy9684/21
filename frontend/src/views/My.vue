@@ -81,6 +81,12 @@
         <p v-if="saveMsg" class="save-msg" :class="{ ok: saveOk }">{{ saveMsg }}</p>
       </div>
 
+      <!-- 学号认证引导提示 -->
+      <div v-if="profileComplete && authStatus !== 'approved' && authStatus !== 'pending'" class="auth-guide-banner">
+        <span>🎓</span>
+        <span>个人信息已完善！请完成<strong>学号认证</strong>后即可开始打卡</span>
+      </div>
+
       <!-- 实名认证卡片 -->
       <div class="panel auth-panel">
         <div class="auth-header">
@@ -236,6 +242,7 @@ const activeTab = ref('profile')
 const saving = ref(false)
 const saveMsg = ref('')
 const saveOk = ref(false)
+const profileComplete = ref(false)
 const achievements = reactive({})
 const showFeedback = ref(false)
 
@@ -311,6 +318,7 @@ async function loadProfile() {
     form.grade = data.grade || ''
     form.gender = data.gender || ''
     authStatus.value = data.auth_status || 'unverified'
+    profileComplete.value = !!(data.nickname && data.age && data.grade && data.gender)
   } catch (e) {
     console.error(e)
   }
@@ -341,9 +349,15 @@ async function saveProfile() {
     user.nickname = form.nickname
     localStorage.setItem('user', JSON.stringify(user))
 
+    profileComplete.value = true
     saveOk.value = true
-    saveMsg.value = '保存成功！'
-    setTimeout(() => { saveMsg.value = '' }, 2000)
+    saveMsg.value = authStatus.value === 'approved' ? '保存成功！' : '保存成功！请完成学号认证后开始打卡'
+    setTimeout(() => { saveMsg.value = '' }, 3000)
+
+    // 如果个人信息已完善但未认证，自动跳转认证页
+    if (authStatus.value !== 'approved') {
+      setTimeout(() => { router.push('/auth') }, 1500)
+    }
   } catch (e) {
     saveOk.value = false
     saveMsg.value = e.response?.data?.error || '保存失败'
@@ -737,6 +751,28 @@ onMounted(() => {
 }
 .nav-item.active { color: #3b82f6; font-weight: 700; }
 .nav-item span:first-child { font-size: 20px; }
+
+/* 学号认证引导横幅 */
+.auth-guide-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: linear-gradient(135deg, #4287f5, #2563eb);
+  color: white;
+  padding: 12px 16px;
+  border-radius: 14px;
+  margin-bottom: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  animation: guidePulse 2s ease-in-out infinite;
+}
+.auth-guide-banner span:first-child {
+  font-size: 22px;
+}
+@keyframes guidePulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.4); }
+  50% { box-shadow: 0 0 0 8px rgba(37, 99, 235, 0); }
+}
 
 /* 实名认证卡片 */
 .auth-panel {

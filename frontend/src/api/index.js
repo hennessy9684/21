@@ -37,6 +37,10 @@ export function updateProfile(data) {
   return api.put('/profile/', data)
 }
 
+export function getSchools() {
+  return api.get('/schools/')
+}
+
 export function getAchievements() {
   return api.get('/achievements/')
 }
