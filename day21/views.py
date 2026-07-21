@@ -165,7 +165,7 @@ def profile(request):
 
 
 @csrf_exempt
-@api_view(['POST'])
+@api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def schools(request):
     """获取所有管理员管理的学校列表（供用户选择）"""
