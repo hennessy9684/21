@@ -214,28 +214,12 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { getUsageStats } from '../api/index.js'
+import { fetchUsageStats, usageStats } from '../stores/checkinStore.js'
 
 const router = useRouter()
-const data = reactive({
-  duration_distribution: [],
-  duration_trend: [],
-  activity_breakdown: [],
-  excessive_days: 0,
-  healthy_days: 0,
-  excessive_rate: 0,
-  weeks: [],
-  report: {
-    score: 0,
-    healthy_rate: 0,
-    top_activity: '',
-    top_activity_percent: 0,
-    most_common_duration: '',
-    advice: [],
-  },
-})
+const data = usageStats  // 共享缓存
 const loading = ref(true)
 
 const user = JSON.parse(localStorage.getItem('user') || '{}')
@@ -244,7 +228,7 @@ const userName = computed(() => user.nickname || '小朋友')
 const colors = ['#3b82f6', '#ef4444', '#f59e0b', '#22c55e', '#8b5cf6', '#06b6d4', '#ec4899', '#6366f1']
 
 const scoreLevel = computed(() => {
-  const s = data.report.score
+  const s = data.value.report.score
   if (s >= 80) return 'green'
   if (s >= 60) return 'orange'
   return 'red'
@@ -252,9 +236,9 @@ const scoreLevel = computed(() => {
 
 // 饼图弧线
 const pieArcs = computed(() => {
-  if (!data.activity_breakdown.length) return []
+  if (!data.value.activity_breakdown.length) return []
   let accumulated = 0
-  return data.activity_breakdown.slice(0, 6).map((act, idx) => {
+  return data.value.activity_breakdown.slice(0, 6).map((act, idx) => {
     const pct = act.percent / 100
     const dashLen = pct * 534  // circumference of r=85
     const offset = accumulated
@@ -270,8 +254,7 @@ const pieArcs = computed(() => {
 
 async function loadData() {
   try {
-    const res = await getUsageStats()
-    Object.assign(data, res.data)
+    await fetchUsageStats()
   } catch (e) {
     console.error(e)
   }

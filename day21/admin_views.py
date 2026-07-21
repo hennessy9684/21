@@ -397,13 +397,12 @@ def admin_users_view(request):
         writer = csv.writer(response)
         writer.writerow(['手机号', '昵称', '学校', '年级', '总打卡天数', '完成进度(%)', '最后打卡日期'])
 
-        profiles = _filter_profiles_by_school(request)
-        for p in profiles:
-            total = CheckInRecord.objects.filter(user=p.user).count()
+        users_data = _build_users_data(request)
+        for u in users_data:
+            p = u['profile']
+            total = u['total_checkins']
             progress = round(total / 21 * 100, 1)
-            last = CheckInRecord.objects.filter(user=p.user).order_by('-day').first()
-            last_date = last.date.strftime('%Y-%m-%d') if last else '-'
-            writer.writerow([p.phone, p.nickname, p.school, p.grade, total, progress, last_date])
+            writer.writerow([p.phone, p.nickname, p.school, p.grade, total, progress, u['last_checkin_date']])
         return response
 
     users_data = _build_users_data(request)
@@ -520,29 +519,69 @@ def admin_import_users(request):
 
 
 def _build_users_data(request):
-    """构建用户数据列表，供 users 页面和导入页面复用"""
-    profiles = _filter_profiles_by_school(request)
+    """构建用户数据列表，供 users 页面和导入页面复用
+    优化：批量查询所有用户的打卡记录，避免 N+1 查询问题。
+    """
+    profiles = list(_filter_profiles_by_school(request))
+    if not profiles:
+        return []
+
+    user_ids = [p.user_id for p in profiles]
+    profile_map = {p.user_id: p for p in profiles}
+
+    # 一次性批量获取所有用户的打卡记录
+    all_checkins = (
+        CheckInRecord.objects
+        .filter(user_id__in=user_ids)
+        .values('user_id', 'day', 'created_at')
+        .order_by('user_id')
+    )
+
+    # 按用户分组
+    user_checkins = {}
+    for c in all_checkins:
+        uid = c['user_id']
+        if uid not in user_checkins:
+            user_checkins[uid] = {'all_days': [], 'last_created_at': None}
+        user_checkins[uid]['all_days'].append(c['day'])
+        created_at = c['created_at']
+        if user_checkins[uid]['last_created_at'] is None or created_at > user_checkins[uid]['last_created_at']:
+            user_checkins[uid]['last_created_at'] = created_at
+
     users_data = []
-    for p in profiles:
-        last_checkin = CheckInRecord.objects.filter(user=p.user).order_by('-created_at').first()
-        total_checkins = CheckInRecord.objects.filter(user=p.user).count()
-        streak_days = 0
-        if total_checkins > 0:
-            checkin_days = sorted(
-                CheckInRecord.objects.filter(user=p.user).values_list('day', flat=True).distinct()
-            )
-            streak_days = 1
-            for j in range(len(checkin_days) - 1, 0, -1):
-                if checkin_days[j] == checkin_days[j - 1] + 1:
-                    streak_days += 1
-                else:
-                    break
+    seen_uids = set()
+
+    for uid, data in user_checkins.items():
+        seen_uids.add(uid)
+        total = len(data['all_days'])
+        distinct_days = sorted(set(data['all_days']))
+
+        # 计算连续打卡天数（从最近一天往回数）
+        streak = 1 if distinct_days else 0
+        for j in range(len(distinct_days) - 1, 0, -1):
+            if distinct_days[j] == distinct_days[j - 1] + 1:
+                streak += 1
+            else:
+                break
+
+        last_date = data['last_created_at'].strftime('%Y-%m-%d') if data['last_created_at'] else '-'
         users_data.append({
-            'profile': p,
-            'total_checkins': total_checkins,
-            'streak_days': streak_days,
-            'last_checkin_date': last_checkin.created_at.strftime('%Y-%m-%d') if last_checkin else '-',
+            'profile': profile_map[uid],
+            'total_checkins': total,
+            'streak_days': streak,
+            'last_checkin_date': last_date,
         })
+
+    # 没有打卡记录的用户
+    for uid in user_ids:
+        if uid not in seen_uids:
+            users_data.append({
+                'profile': profile_map[uid],
+                'total_checkins': 0,
+                'streak_days': 0,
+                'last_checkin_date': '-',
+            })
+
     return users_data
 
 
@@ -576,12 +615,21 @@ def admin_topics_view(request):
             pass
 
     topics = DailyTopic.objects.all().order_by('day')
+
+    # 批量查询每个 topic 的回答数，避免 N+1
+    answer_counts = dict(
+        CheckInRecord.objects
+        .exclude(user__profile__role__in=['admin', 'super_admin'])
+        .values('day')
+        .annotate(cnt=Count('id'))
+        .values_list('day', 'cnt')
+    )
+
     topics_data = []
     for t in topics:
-        answer_count = CheckInRecord.objects.filter(day=t.day).exclude(user__profile__role__in=['admin', 'super_admin']).count()
         topics_data.append({
             'topic': t,
-            'answer_count': answer_count,
+            'answer_count': answer_counts.get(t.day, 0),
         })
 
     context = {
@@ -1156,10 +1204,23 @@ def admin_auth_view(request):
         profiles = profiles.filter(auth_status=status_filter)
     profiles = profiles.order_by('-auth_time', 'auth_status')
 
+    # 批量查询打卡次数，避免 N+1
+    profile_list = list(profiles)
+    user_ids = [p.user_id for p in profile_list]
+    checkin_counts = {}
+    if user_ids:
+        counts = (
+            CheckInRecord.objects
+            .filter(user_id__in=user_ids)
+            .values('user_id')
+            .annotate(cnt=Count('id'))
+        )
+        checkin_counts = {c['user_id']: c['cnt'] for c in counts}
+
     auth_data = []
-    for p in profiles:
+    for p in profile_list:
         student_id = p.student_id or ''
-        total_checkins = CheckInRecord.objects.filter(user=p.user).count()
+        total_checkins = checkin_counts.get(p.user_id, 0)
         auth_data.append({
             'profile': p,
             'student_id': student_id,

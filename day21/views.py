@@ -316,51 +316,10 @@ def achievements(request):
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def daily_topics(request):
-    """获取21天打卡主题"""
+    """获取21天打卡主题（部署前请先执行 python manage.py seed_topics 初始化）"""
     topics = DailyTopic.objects.all().order_by('day')
-    # 如果数据库为空，先初始化
-    if not topics.exists():
-        _init_topics()
-        topics = DailyTopic.objects.all().order_by('day')
     serializer = DailyTopicSerializer(topics, many=True)
     return Response(serializer.data)
-
-
-def _init_topics():
-    """初始化21天安全用网打卡主题"""
-    topics_data = [
-        (1, '认识网络安全', '了解什么是网络安全，为什么它对我们很重要', '你认为网络安全是什么？请用自己的话描述一下吧！', '🔒'),
-        (2, '我的网络身份', '思考你在网络上的身份，如何保护个人信息', '你在网上分享过哪些个人信息？哪些不该分享？', '🆔'),
-        (3, '密码小达人', '学习创建强密码，保护账号安全', '你的密码够安全吗？说说创建强密码的小技巧！', '🔑'),
-        (4, '网络诈骗大揭秘', '认识常见的网络诈骗手段', '你或身边的人遇到过网络诈骗吗？是怎么样的？', '🎭'),
-        (5, '文明上网小卫士', '学习网络礼仪，做文明的小网民', '你觉得在网上应该注意哪些文明礼仪？', '😇'),
-        (6, '健康上网时间', '合理安排上网时间，保护视力', '你每天上网多久？有什么控制上网时间的好方法？', '⏰'),
-        (7, '网络谣言辨别', '学会辨别真假信息', '你是怎么判断网上信息真假的？分享你的方法！', '🔍'),
-        (8, '保护个人隐私', '了解隐私保护的重要性', '你认为哪些信息属于个人隐私？如何保护？', '🤫'),
-        (9, '安全社交', '社交媒体安全使用指南', '你在社交平台上遇到过哪些安全问题？如何处理？', '💬'),
-        (10, '网络暴力说"不"', '认识网络暴力，学会保护自己', '遇到网络暴力时你会怎么做？如何帮助他人？', '🚫'),
-        (11, '游戏安全指南', '安全玩游戏，远离游戏陷阱', '你玩游戏时遇到过哪些安全问题？如何防范？', '🎮'),
-        (12, '网络消费小达人', '学会安全网购，理性消费', '你在网上买过东西吗？分享安全网购的经验！', '🛒'),
-        (13, '识别钓鱼网站', '学会识别钓鱼链接和网站', '怎么分辨一个网站是否安全？分享你的判断方法！', '🎣'),
-        (14, '公共WiFi安全', '了解公共WiFi的风险', '你在公共场所连接WiFi时要注意什么？', '📶'),
-        (15, '网络学习好帮手', '善用网络资源学习', '你用过哪些有益的学习网站或App？推荐给大家！', '📚'),
-        (16, '短视频安全', '安全刷视频，远离不良内容', '刷短视频时遇到不良内容你会怎么做？', '🎬'),
-        (17, '网络交友安全', '安全交友，不轻信陌生人', '网络上有陌生人加你好友你会怎么处理？', '👥'),
-        (18, '手机安全指南', '保护手机安全，防范风险', '你的手机做了哪些安全设置？分享一下吧！', '📱'),
-        (19, '绿色上网承诺', '制定自己的上网守则', '请写下你的绿色上网承诺书！', '📝'),
-        (20, '分享我的收获', '回顾这20天的学习收获', '这20天你学到了什么？最大的收获是什么？', '🎉'),
-        (21, '毕业啦！', '完成21天打卡，成为网络安全小达人', '恭喜完成21天打卡！请写下你的感想和对未来的期望！', '🏆'),
-    ]
-    for day, title, content, question, icon in topics_data:
-        DailyTopic.objects.get_or_create(
-            day=day,
-            defaults={
-                'title': title,
-                'content': content,
-                'question': question,
-                'icon': icon,
-            }
-        )
 
 
 @csrf_exempt
@@ -513,6 +472,9 @@ def usage_stats(request):
     """上网数据统计 - 时长/用途/超标/周报"""
     records = CheckInRecord.objects.filter(user=request.user).order_by('day')
 
+    # 预取所有 DailyTopic，避免循环内 N+1 查询
+    topics_map = {t.day: t.title for t in DailyTopic.objects.all()}
+
     # 1. 上网时长统计
     duration_map = {'0-1小时': 0, '1-3小时': 0, '3-5小时': 0, '5小时以上': 0}
     duration_trend = []  # 每天时长趋势
@@ -522,7 +484,7 @@ def usage_stats(request):
         duration_map[dur_key] = duration_map.get(dur_key, 0) + 1
         duration_trend.append({
             'day': r.day,
-            'title': DailyTopic.objects.get(day=r.day).title if DailyTopic.objects.filter(day=r.day).exists() else f'第{r.day}天',
+            'title': topics_map.get(r.day, f'第{r.day}天'),
             'duration': raw_dur or '-',
             'hours': hours,
         })
@@ -641,11 +603,25 @@ def _generate_advice(total_excessive, excessive_rate, top_activity, most_duratio
 @api_view(['GET', 'POST'])
 @permission_classes([IsAuthenticated])
 def messages_view(request):
-    """留言板：获取留言 / 发布留言"""
+    """留言板：获取留言（分页）/ 发布留言"""
     if request.method == 'GET':
-        msgs = Message.objects.all().prefetch_related('replies__user__profile', 'likes').order_by('-created_at')[:100]
+        page = int(request.GET.get('page', 1))
+        page_size = min(int(request.GET.get('page_size', 20)), 50)
+
+        qs = Message.objects.all().prefetch_related('replies__user__profile', 'likes').order_by('-created_at')
+        total = qs.count()
+
+        offset = (page - 1) * page_size
+        msgs = qs[offset:offset + page_size]
+
         serializer = MessageSerializer(msgs, many=True, context={'request': request})
-        return Response(serializer.data)
+        return Response({
+            'results': serializer.data,
+            'total': total,
+            'page': page,
+            'page_size': page_size,
+            'has_more': offset + page_size < total,
+        })
 
     # POST
     serializer = MessageCreateSerializer(data=request.data)
@@ -699,17 +675,31 @@ def like_message(request, message_id):
 @api_view(['GET', 'POST'])
 @permission_classes([IsAuthenticated])
 def notifications_view(request):
-    """系统通知"""
+    """系统通知（分页）"""
     if request.method == 'GET':
-        notifs = Notification.objects.filter(user=request.user).order_by('-created_at')[:50]
+        page = int(request.GET.get('page', 1))
+        page_size = min(int(request.GET.get('page_size', 20)), 50)
+
+        qs = Notification.objects.filter(user=request.user).order_by('-created_at')
+        total = qs.count()
+        unread_count = qs.filter(is_read=False).count()
+
+        offset = (page - 1) * page_size
+        notifs = qs[offset:offset + page_size]
+
         data = [{
             'id': n.id, 'title': n.title, 'content': n.content,
             'n_type': n.n_type, 'is_read': n.is_read,
             'created_at': n.created_at.isoformat(),
         } for n in notifs]
+
         return Response({
-            'notifications': data,
-            'unread_count': Notification.objects.filter(user=request.user, is_read=False).count(),
+            'results': data,
+            'total': total,
+            'page': page,
+            'page_size': page_size,
+            'has_more': offset + page_size < total,
+            'unread_count': unread_count,
         })
 
     # POST: mark read

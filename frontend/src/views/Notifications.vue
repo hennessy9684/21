@@ -31,6 +31,16 @@
         </div>
       </div>
     </div>
+
+    <!-- 加载更多 -->
+    <div v-if="hasMore" class="load-more-wrap">
+      <button class="btn-load-more" @click="loadMore" :disabled="loadingMore">
+        {{ loadingMore ? '加载中...' : '加载更多 ▼' }}
+      </button>
+    </div>
+    <div v-else-if="notifs.length > 0" class="load-more-wrap">
+      <span class="no-more">— 已显示全部通知 —</span>
+    </div>
   </div>
 </template>
 
@@ -43,6 +53,9 @@ const router = useRouter()
 const notifs = ref([])
 const unreadCount = ref(0)
 const loading = ref(true)
+const loadingMore = ref(false)
+const page = ref(1)
+const hasMore = ref(false)
 
 function formatTime(s) {
   if (!s) return ''
@@ -55,13 +68,32 @@ function formatTime(s) {
   return `${d.getMonth() + 1}月${d.getDate()}日`
 }
 
-async function loadNotifs() {
+async function loadNotifs(reset = true) {
+  if (reset) {
+    page.value = 1
+    loading.value = true
+  }
   try {
-    const res = await getNotifications()
-    notifs.value = res.data.notifications || []
-    unreadCount.value = res.data.unread_count || 0
+    const res = await getNotifications(page.value)
+    const data = res.data
+    const items = data.results || []
+    if (reset) {
+      notifs.value = items
+    } else {
+      notifs.value.push(...items)
+    }
+    unreadCount.value = data.unread_count || 0
+    hasMore.value = data.has_more
   } catch (e) { console.error(e) }
   loading.value = false
+  loadingMore.value = false
+}
+
+async function loadMore() {
+  if (loadingMore.value || !hasMore.value) return
+  loadingMore.value = true
+  page.value++
+  await loadNotifs(false)
 }
 
 async function readNotif(n) {
@@ -141,4 +173,31 @@ onMounted(loadNotifs)
 .n-dot { width: 7px; height: 7px; background: #ff4757; border-radius: 50%; }
 .n-content { font-size: 13px; color: #666; margin: 0 0 6px; line-height: 1.5; }
 .n-time { font-size: 11px; color: #bbb; }
+
+/* Load More */
+.load-more-wrap {
+  display: flex;
+  justify-content: center;
+  padding: 16px 0;
+}
+.btn-load-more {
+  background: white;
+  border: 2px solid #e8ecf4;
+  color: #667eea;
+  padding: 10px 32px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-load-more:hover:not(:disabled) {
+  background: #f0f4ff;
+  border-color: #667eea;
+}
+.btn-load-more:disabled { opacity: 0.5; cursor: default; }
+.no-more {
+  font-size: 12px;
+  color: #bbb;
+}
 </style>

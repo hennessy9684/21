@@ -69,8 +69,8 @@ export function reviewAuth(profileId, action, reason = '') {
   return api.post('/admin/auth-review/', { profile_id: profileId, action, reason })
 }
 
-export function getNotifications() {
-  return api.get('/notifications/')
+export function getNotifications(page = 1, pageSize = 20) {
+  return api.get('/notifications/', { params: { page, page_size: pageSize } })
 }
 
 export function markNotificationsRead(id) {
@@ -101,8 +101,8 @@ export function getUsageStats() {
   return api.get('/usage-stats/')
 }
 
-export function getMessages() {
-  return api.get('/messages/')
+export function getMessages(page = 1, pageSize = 20) {
+  return api.get('/messages/', { params: { page, page_size: pageSize } })
 }
 
 export function postMessage(content) {

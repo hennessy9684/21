@@ -241,14 +241,15 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { getTopics, getCheckIns, getCheckInStats, getNotifications } from '../api/index.js'
+import { getTopics, getNotifications } from '../api/index.js'
+import { fetchCheckIns, fetchStats, checkinMap, stats as storeStats } from '../stores/checkinStore.js'
 
 const router = useRouter()
 const topics = ref([])
-const checkins = reactive({})
-const stats = reactive({ total_days: 0, streak_days: 0, progress: 0, completed: false })
+const checkins = checkinMap  // 共享缓存：{ [day]: record }
+const stats = storeStats      // 共享缓存：{ total_days, streak_days, progress, completed }
 const showRules = ref(false)
 const showCalendar = ref(false)
 const unreadCount = ref(0)
@@ -279,13 +280,13 @@ const todayTopic = computed(() => {
 // 下一关主题
 const nextTopic = computed(() => {
   if (!topics.value.length) return null
-  const maxDone = Math.max(0, ...Object.keys(checkins).map(Number))
+  const maxDone = Math.max(0, ...Object.keys(checkins.value).map(Number))
   if (maxDone >= 21) return null
   return topics.value.find(t => t.day === maxDone + 1)
 })
 
 function isToday(day) {
-  const doneDays = Object.keys(checkins).map(Number)
+  const doneDays = Object.keys(checkins.value).map(Number)
   const maxDone = doneDays.length ? Math.max(...doneDays) : 0
   if (doneDays.includes(day)) return false
   return day === maxDone + 1
@@ -297,7 +298,7 @@ function onDayClick(day) {
 }
 
 function calDayClick(topic) {
-  if (checkins[topic.day]) { router.push('/checkin'); return }
+  if (checkins.value[topic.day]) { router.push('/checkin'); return }
   if (topic.day > maxAvailableDay.value) return
   showCalendar.value = false
   router.push('/checkin')
@@ -305,14 +306,12 @@ function calDayClick(topic) {
 
 async function loadData() {
   try {
-    const [topicsRes, checkinRes, statsRes] = await Promise.all([
+    const [topicsRes] = await Promise.all([
       getTopics(),
-      getCheckIns(),
-      getCheckInStats(),
+      fetchCheckIns(),
+      fetchStats(),
     ])
     topics.value = topicsRes.data
-    checkinRes.data.forEach(r => { checkins[r.day] = r })
-    Object.assign(stats, statsRes.data)
   } catch (e) {
     console.error(e)
   }

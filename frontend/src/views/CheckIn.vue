@@ -403,14 +403,15 @@
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { getTopics, getCheckIns, submitCheckIn, getCheckInStats, getQuizQuestions, submitQuiz as submitQuizApi, getProfile } from '../api/index.js'
+import { getTopics, submitCheckIn, getQuizQuestions, submitQuiz as submitQuizApi, getProfile } from '../api/index.js'
+import { fetchCheckIns, fetchStats, checkinMap, stats as storeStats, invalidateCheckins } from '../stores/checkinStore.js'
 
 const router = useRouter()
 const route = useRoute()
 
 const topics = ref([])
-const checkins = reactive({})
-const stats = reactive({ total_days: 0, streak_days: 0, progress: 0, completed: false })
+const checkins = checkinMap  // 共享缓存：{ [day]: record }
+const stats = storeStats      // 共享缓存：{ total_days, streak_days, progress, completed }
 const currentDay = ref(0)
 const submitting = ref(false)
 const errorMsg = ref('')
@@ -582,7 +583,7 @@ const impactOptions = [
 const moods = ['😊', '😄', '🥰', '🤩', '😎', '🤗', '💪', '🔥', '😅', '🤔']
 
 const maxAvailableDay = computed(() => {
-  const maxChecked = Math.max(0, ...Object.keys(checkins).map(Number))
+  const maxChecked = Math.max(0, ...Object.keys(checkins.value).map(Number))
   return Math.min(maxChecked + 1, 21)
 })
 
@@ -590,7 +591,7 @@ const currentTopic = computed(() => {
   if (checkedInToday.value) return null
   const targetDay = currentDay.value || maxAvailableDay.value
   if (!targetDay || targetDay > 21) return null
-  if (checkins[targetDay]) return null
+  if (checkins.value[targetDay]) return null
   return topics.value.find(t => t.day === targetDay)
 })
 
@@ -624,11 +625,11 @@ function toggleActivity(val) {
 }
 
 function selectDayByNumber(day) {
-  if (checkins[day]) {
+  if (checkins.value[day]) {
     const topic = topics.value.find(t => t.day === day)
     if (topic) {
       viewingRecord.value = {
-        ...checkins[day],
+        ...checkins.value[day],
         icon: topic.icon,
         title: topic.title,
       }
@@ -696,18 +697,16 @@ async function checkReadiness() {
 
 async function loadData() {
   try {
-    const [topicsRes, checkinRes, statsRes] = await Promise.all([
+    const [topicsRes] = await Promise.all([
       getTopics(),
-      getCheckIns(),
-      getCheckInStats(),
+      fetchCheckIns(),
+      fetchStats(),
     ])
     topics.value = topicsRes.data
-    checkinRes.data.forEach(r => { checkins[r.day] = r })
-    Object.assign(stats, statsRes.data)
 
     // 检查今天是否已经打过卡
     const todayStr = new Date().toISOString().split('T')[0]
-    checkedInToday.value = checkinRes.data.some(r => r.date === todayStr)
+    checkedInToday.value = Object.values(checkins.value).some(r => r.date === todayStr)
   } catch (e) {
     console.error(e)
   }
@@ -760,18 +759,24 @@ async function handleSubmit() {
     })
     const data = res.data
 
-    checkins[day] = data.record
-    stats.total_days++
-    stats.progress = Math.round(stats.total_days / 21 * 100)
-    if (stats.total_days > stats.streak_days) stats.streak_days = stats.total_days
+    // 更新本地缓存
+    checkins.value[day] = data.record
+    stats.value.total_days = (stats.value.total_days || 0) + 1
+    stats.value.progress = Math.round(stats.value.total_days / 21 * 100)
+    if (stats.value.total_days > (stats.value.streak_days || 0)) {
+      stats.value.streak_days = stats.value.total_days
+    }
     checkedInToday.value = true
+
+    // 使共享缓存失效，确保其他页面刷新数据
+    invalidateCheckins()
 
     lastSubmit.duration = form.online_duration
     lastSubmit.activities = form.online_activities
     lastSubmit.mood = form.mood
     successDay.value = day
-    successCount.value = stats.total_days
-    successPercent.value = stats.progress
+    successCount.value = stats.value.total_days
+    successPercent.value = stats.value.progress
     submitted.value = true
 
     let sec = 3

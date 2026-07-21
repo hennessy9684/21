@@ -4,7 +4,7 @@
     <header class="header">
       <span class="header-icon">💬</span>
       <h2>留言板</h2>
-      <span class="header-count">{{ messages.length }}条留言</span>
+      <span class="header-count">{{ totalCount }}条留言</span>
     </header>
 
     <!-- 发布留言 -->
@@ -79,6 +79,16 @@
           </div>
         </div>
       </div>
+
+      <!-- 加载更多 -->
+      <div v-if="hasMore" class="load-more-wrap">
+        <button class="btn-load-more" @click="loadMore" :disabled="loadingMore">
+          {{ loadingMore ? '加载中...' : '加载更多留言 ▼' }}
+        </button>
+      </div>
+      <div v-else-if="messages.length > 0" class="load-more-wrap">
+        <span class="no-more">— 已显示全部留言 —</span>
+      </div>
     </div>
 
     <!-- 底部导航 -->
@@ -113,6 +123,10 @@ const newContent = ref('')
 const posting = ref(false)
 const errorMsg = ref('')
 const loading = ref(true)
+const loadingMore = ref(false)
+const totalCount = ref(0)
+const page = ref(1)
+const hasMore = ref(false)
 
 const user = JSON.parse(localStorage.getItem('user') || '{}')
 const userName = computed(() => user.nickname || '小朋友')
@@ -138,18 +152,38 @@ function formatTime(dateStr) {
   return `${d.getMonth() + 1}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`
 }
 
-async function loadMessages() {
+async function loadMessages(reset = true) {
+  if (reset) {
+    page.value = 1
+    loading.value = true
+  }
   try {
-    const res = await getMessages()
-    messages.value = res.data.map(m => ({
+    const res = await getMessages(page.value)
+    const data = res.data
+    const mapped = (data.results || []).map(m => ({
       ...m,
       showReply: false,
       replyText: '',
     }))
+    if (reset) {
+      messages.value = mapped
+    } else {
+      messages.value.push(...mapped)
+    }
+    totalCount.value = data.total
+    hasMore.value = data.has_more
   } catch (e) {
     console.error(e)
   }
   loading.value = false
+  loadingMore.value = false
+}
+
+async function loadMore() {
+  if (loadingMore.value || !hasMore.value) return
+  loadingMore.value = true
+  page.value++
+  await loadMessages(false)
 }
 
 async function postMsg() {
@@ -380,6 +414,33 @@ onMounted(loadMessages)
   white-space: nowrap;
 }
 .btn-send-reply:disabled { opacity: 0.5; }
+
+/* Load More */
+.load-more-wrap {
+  display: flex;
+  justify-content: center;
+  padding: 16px 0;
+}
+.btn-load-more {
+  background: white;
+  border: 2px solid #e8ecf4;
+  color: #3b82f6;
+  padding: 10px 32px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-load-more:hover:not(:disabled) {
+  background: #eff6ff;
+  border-color: #3b82f6;
+}
+.btn-load-more:disabled { opacity: 0.5; cursor: default; }
+.no-more {
+  font-size: 12px;
+  color: #bbb;
+}
 
 /* Bottom Nav */
 .bottom-nav {
