@@ -3,7 +3,6 @@ from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
 from django.http import HttpResponse
 from datetime import date, datetime
-import io
 from ..models import UserProfile, CheckInRecord
 from django.contrib.auth.models import User
 from .decorators import admin_required, _get_managed_school
@@ -145,7 +144,7 @@ def admin_dashboard_view(request):
 def admin_export_checkins(request):
     """导出管辖范围内的打卡数据为 Excel"""
     from openpyxl import Workbook
-    from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
+    from .excel_utils import make_styles, write_header, write_row, set_col_widths, make_response
 
     managed_school = _get_managed_school(request)
     if managed_school == '__none__':
@@ -164,18 +163,7 @@ def admin_export_checkins(request):
     wb = Workbook()
     ws = wb.active
     ws.title = '打卡数据'
-
-    # ── Styles ──
-    header_font = Font(name='微软雅黑', bold=True, size=11, color='FFFFFF')
-    header_fill = PatternFill(start_color='6366F1', end_color='6366F1', fill_type='solid')
-    header_align = Alignment(horizontal='center', vertical='center', wrap_text=True)
-    cell_align = Alignment(horizontal='center', vertical='center')
-    thin_border = Border(
-        left=Side(style='thin', color='D1D5DB'),
-        right=Side(style='thin', color='D1D5DB'),
-        top=Side(style='thin', color='D1D5DB'),
-        bottom=Side(style='thin', color='D1D5DB'),
-    )
+    styles = make_styles()
 
     # ── Headers ──
     headers = [
@@ -183,17 +171,12 @@ def admin_export_checkins(request):
         '打卡天数', '打卡日期', '学习时长(分)', '娱乐时长(分)',
         '上网活动', '心情', '自评(分)', '打卡时间',
     ]
-    for col, h in enumerate(headers, 1):
-        cell = ws.cell(row=1, column=col, value=h)
-        cell.font = header_font
-        cell.fill = header_fill
-        cell.alignment = header_align
-        cell.border = thin_border
+    write_header(ws, headers, styles)
 
     # ── Data rows ──
     for i, record in enumerate(checkins, start=1):
         profile = record.user.profile
-        row_data = [
+        write_row(ws, i + 1, [
             i,
             profile.phone,
             profile.real_name or profile.nickname,
@@ -207,31 +190,10 @@ def admin_export_checkins(request):
             record.mood or '-',
             record.self_rating or '-',
             record.created_at.strftime('%Y-%m-%d %H:%M') if record.created_at else '-',
-        ]
-        for col, val in enumerate(row_data, 1):
-            cell = ws.cell(row=i + 1, column=col, value=val)
-            cell.alignment = cell_align
-            cell.border = thin_border
+        ], styles)
 
-    # ── Column widths ──
-    col_widths = [6, 16, 10, 12, 8, 8, 14, 14, 14, 28, 10, 10, 20]
-    for col, w in enumerate(col_widths, 1):
-        ws.column_dimensions[ws.cell(row=1, column=col).column_letter].width = w
-
-    # ── Freeze header ──
+    set_col_widths(ws, [6, 16, 10, 12, 8, 8, 14, 14, 14, 28, 10, 10, 20])
     ws.freeze_panes = 'A2'
 
-    # ── Response ──
-    output = io.BytesIO()
-    wb.save(output)
-    output.seek(0)
-
     school_label = managed_school if managed_school else '全部'
-    filename = f'打卡数据_{school_label}_{date.today().strftime("%Y%m%d")}.xlsx'
-    response = HttpResponse(
-        output.read(),
-        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-    )
-    response['Content-Disposition'] = f'attachment; filename="{filename}"'
-    response['Content-Length'] = len(response.content)
-    return response
+    return make_response(wb, f'打卡数据_{school_label}_{date.today().strftime("%Y%m%d")}.xlsx')

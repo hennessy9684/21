@@ -73,66 +73,35 @@ def admin_quiz_view(request):
     # ── EXPORT ──
     if request.GET.get('export') == '1':
         import openpyxl
+        from .excel_utils import make_styles, write_header, set_col_widths, make_response
+
         wb = openpyxl.Workbook()
         ws = wb.active
         ws.title = '题库数据'
-
-        # Styled header
-        header_font = openpyxl.styles.Font(bold=True, color='FFFFFF', size=11)
-        header_fill = openpyxl.styles.PatternFill(start_color='4F46E5', end_color='4F46E5', fill_type='solid')
-        header_align = openpyxl.styles.Alignment(horizontal='center', vertical='center')
-        thin_border = openpyxl.styles.Border(
-            left=openpyxl.styles.Side(style='thin', color='D1D5DB'),
-            right=openpyxl.styles.Side(style='thin', color='D1D5DB'),
-            top=openpyxl.styles.Side(style='thin', color='D1D5DB'),
-            bottom=openpyxl.styles.Side(style='thin', color='D1D5DB'),
-        )
+        styles = make_styles(header_color='4F46E5')
 
         headers = ['ID', '题型', '天数', '题目', '选项A', '选项B', '选项C', '选项D', '答案', '解析']
-        for col, h in enumerate(headers, 1):
-            cell = ws.cell(row=1, column=col, value=h)
-            cell.font = header_font
-            cell.fill = header_fill
-            cell.alignment = header_align
-            cell.border = thin_border
+        write_header(ws, headers, styles)
 
-        ws.column_dimensions['A'].width = 6
-        ws.column_dimensions['B'].width = 10
-        ws.column_dimensions['C'].width = 8
-        ws.column_dimensions['D'].width = 55
-        ws.column_dimensions['E'].width = 28
-        ws.column_dimensions['F'].width = 28
-        ws.column_dimensions['G'].width = 28
-        ws.column_dimensions['H'].width = 28
-        ws.column_dimensions['I'].width = 8
-        ws.column_dimensions['J'].width = 40
+        col_widths = [6, 10, 8, 55, 28, 28, 28, 28, 8, 40]
+        set_col_widths(ws, col_widths)
 
         qs = QuizQuestion.objects.all().order_by('day', 'id')
         for row, q in enumerate(qs, 2):
             data = [
-                q.id,
-                '判断题' if q.q_type == 'true_false' else '选择题',
-                q.day,
-                q.question,
-                q.option_a or '',
-                q.option_b or '',
-                q.option_c or '',
-                q.option_d or '',
-                q.answer,
-                q.explanation or '',
+                q.id, '判断题' if q.q_type == 'true_false' else '选择题',
+                q.day, q.question,
+                q.option_a or '', q.option_b or '', q.option_c or '', q.option_d or '',
+                q.answer, q.explanation or '',
             ]
             for col, val in enumerate(data, 1):
                 cell = ws.cell(row=row, column=col, value=val)
-                cell.border = thin_border
+                cell.border = styles['thin_border']
                 cell.alignment = openpyxl.styles.Alignment(vertical='center', wrap_text=True)
 
         ws.freeze_panes = 'A2'
         ws.auto_filter.ref = ws.dimensions
-
-        response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-        response['Content-Disposition'] = 'attachment; filename=quiz_export.xlsx'
-        wb.save(response)
-        return response
+        return make_response(wb, 'quiz_export.xlsx')
 
     # ── IMPORT ──
     if request.method == 'POST' and request.FILES.get('import_file'):

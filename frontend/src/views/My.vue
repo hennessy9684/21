@@ -220,7 +220,8 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import BottomNav from '../components/BottomNav.vue'
-import { getProfile, updateProfile, getAchievements } from '../api/index.js'
+import { getProfile, updateProfile, getAchievements } from '../api/index'
+import { logout as userLogout, fetchProfile as userFetchProfile, user as userStoreUser } from '../stores/userStore'
 
 const router = useRouter()
 const activeTab = ref('profile')
@@ -304,6 +305,9 @@ async function loadProfile() {
     form.gender = data.gender || ''
     authStatus.value = data.auth_status || 'unverified'
     profileComplete.value = !!(data.nickname && data.age && data.grade && data.gender)
+    // 同步到 userStore
+    userStoreUser.value = { ...userStoreUser.value, ...data }
+    localStorage.setItem('user', JSON.stringify(userStoreUser.value))
   } catch (e) {
     console.error(e)
   }
@@ -329,10 +333,8 @@ async function saveProfile() {
       grade: form.grade,
       gender: form.gender,
     })
-    // 更新 localStorage
-    const user = JSON.parse(localStorage.getItem('user') || '{}')
-    user.nickname = form.nickname
-    localStorage.setItem('user', JSON.stringify(user))
+    // 更新 userStore 中的 user 信息
+    await userFetchProfile()
 
     profileComplete.value = true
     saveOk.value = true
@@ -356,19 +358,18 @@ function saveSettings() {
 
 function clearCache() {
   // 保留用户数据，清理其他缓存
-  const user = localStorage.getItem('user')
-  const token = localStorage.getItem('token')
+  const u = userStoreUser.value ? JSON.stringify(userStoreUser.value) : null
+  const t = localStorage.getItem('token')
   localStorage.clear()
-  if (user) localStorage.setItem('user', user)
-  if (token) localStorage.setItem('token', token)
+  if (u) localStorage.setItem('user', u)
+  if (t) localStorage.setItem('token', t)
   saveMsg.value = '缓存已清除'
   saveOk.value = true
   setTimeout(() => { saveMsg.value = '' }, 2000)
 }
 
 function logout() {
-  localStorage.removeItem('token')
-  localStorage.removeItem('user')
+  userLogout()
   router.push('/login')
 }
 

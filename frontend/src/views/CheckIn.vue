@@ -388,8 +388,9 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import BottomNav from '../components/BottomNav.vue'
-import { getTopics, submitCheckIn, getQuizQuestions, submitQuiz as submitQuizApi, getProfile } from '../api/index.js'
-import { fetchCheckIns, fetchStats, checkinMap, stats as storeStats, invalidateCheckins } from '../stores/checkinStore.js'
+import { getTopics, submitCheckIn, getQuizQuestions, submitQuiz as submitQuizApi, getProfile } from '../api/index'
+import { fetchCheckIns, fetchStats, checkinMap, stats as storeStats, invalidateCheckins } from '../stores/checkinStore'
+import { user as userStoreUser } from '../stores/userStore'
 
 const router = useRouter()
 const route = useRoute()
@@ -675,6 +676,9 @@ async function checkReadiness() {
     profileReady.value = !!(p.nickname && p.age && p.grade && p.gender)
     authReady.value = p.auth_status === 'approved'
     readyToCheckin.value = profileReady.value && authReady.value
+    // 同步到 userStore
+    userStoreUser.value = { ...userStoreUser.value, ...p }
+    localStorage.setItem('user', JSON.stringify(userStoreUser.value))
   } catch (e) {
     console.error('检查打卡资格失败:', e)
   }

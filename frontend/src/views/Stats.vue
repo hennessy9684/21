@@ -201,7 +201,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import BottomNav from '../components/BottomNav.vue'
-import { fetchUsageStats, usageStats } from '../stores/checkinStore.js'
+import { fetchUsageStats, usageStats } from '../stores/checkinStore'
 
 const router = useRouter()
 const data = usageStats  // 共享缓存

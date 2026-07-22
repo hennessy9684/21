@@ -11,6 +11,7 @@ import Feedback from '../views/Feedback.vue'
 import Privacy from '../views/Privacy.vue'
 import QuizHistory from '../views/QuizHistory.vue'
 import RealNameAuth from '../views/RealNameAuth.vue'
+import { token } from '../stores/userStore'
 
 const routes = [
   { path: '/', name: 'Home', component: Home },
@@ -33,8 +34,7 @@ const router = createRouter({
 })
 
 router.beforeEach((to, from, next) => {
-  const user = localStorage.getItem('user')
-  if (to.meta.requiresAuth && !user) {
+  if (to.meta.requiresAuth && !token.value) {
     next('/login')
   } else {
     next()

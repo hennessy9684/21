@@ -149,7 +149,7 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import BottomNav from '../components/BottomNav.vue'
-import { getProfile, submitAuth, getSchools } from '../api/index.js'
+import { getProfile, submitAuth, getSchools } from '../api/index'
 
 const router = useRouter()
 

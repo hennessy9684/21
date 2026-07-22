@@ -108,7 +108,7 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import BottomNav from '../components/BottomNav.vue'
-import { getQuizHistory } from '../api/index.js'
+import { getQuizHistory } from '../api/index'
 
 const router = useRouter()
 

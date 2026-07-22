@@ -47,8 +47,8 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { getNotifications, markNotificationsRead, markAllNotificationsRead } from '../api/index.js'
-import { formatTime } from '../utils/time.js'
+import { getNotifications, markNotificationsRead, markAllNotificationsRead } from '../api/index'
+import { formatTime } from '../utils/time'
 
 const router = useRouter()
 const notifs = ref([])

@@ -100,8 +100,8 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import BottomNav from '../components/BottomNav.vue'
-import { getMessages, postMessage, replyMessage, likeMessage } from '../api/index.js'
-import { formatTime } from '../utils/time.js'
+import { getMessages, postMessage, replyMessage, likeMessage } from '../api/index'
+import { formatTime } from '../utils/time'
 
 const router = useRouter()
 const messages = ref([])

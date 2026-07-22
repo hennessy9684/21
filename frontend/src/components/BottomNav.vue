@@ -16,15 +16,13 @@
 <script setup>
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { isLoggedIn } from '../stores/userStore'
 
 const props = defineProps({
   activeTab: { type: String, default: '' },
 })
 
 const router = useRouter()
-
-const user = JSON.parse(localStorage.getItem('user') || 'null')
-const isLoggedIn = computed(() => !!user)
 
 const tabs = [
   { key: 'home',     icon: '🏠', label: '首页', path: '/' },

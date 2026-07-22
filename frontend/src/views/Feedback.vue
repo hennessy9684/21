@@ -51,7 +51,7 @@
 <script setup>
 import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
-import { postMessage } from '../api/index.js'
+import { postMessage } from '../api/index'
 
 const router = useRouter()
 const submitting = ref(false)

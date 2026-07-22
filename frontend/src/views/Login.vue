@@ -69,7 +69,8 @@
 <script setup>
 import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
-import { sendCode, register, login } from '../api/index.js'
+import { sendCode, register } from '../api/index'
+import { login as userStoreLogin, setAuth } from '../stores/userStore'
 
 const router = useRouter()
 const mode = ref('login')
@@ -117,12 +118,10 @@ async function handleLogin() {
   loginError.value = ''
   try {
     console.log('Login attempt:', loginForm.phone, loginForm.password)
-    const res = await login(loginForm.phone, loginForm.password)
-    console.log('Login response:', res.data)
-    localStorage.setItem('user', JSON.stringify(res.data.user))
-    localStorage.setItem('token', res.data.token)
+    const data = await userStoreLogin(loginForm.phone, loginForm.password)
+    console.log('Login response:', data)
     
-    const role = res.data.user.role || 'user'
+    const role = data.user.role || 'user'
     if (role === 'admin' || role === 'super_admin') {
       window.location.href = '/manage/signin/'
     } else {
@@ -154,8 +153,7 @@ async function handleRegister() {
   regError.value = ''
   try {
         const res = await register(regForm.phone, regForm.code, regForm.password, regForm.nickname)
-        localStorage.setItem('user', JSON.stringify(res.data.user))
-        localStorage.setItem('token', res.data.token)
+        setAuth(res.data.token, res.data.user)
         router.push('/my')  // 注册后先完善个人信息
   } catch (e) {
     regError.value = e.response?.data?.error || '注册失败'

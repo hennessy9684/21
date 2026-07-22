@@ -228,8 +228,9 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import BottomNav from '../components/BottomNav.vue'
-import { getTopics, getNotifications } from '../api/index.js'
-import { fetchCheckIns, fetchStats, checkinMap, stats as storeStats } from '../stores/checkinStore.js'
+import { getTopics, getNotifications } from '../api/index'
+import { fetchCheckIns, fetchStats, checkinMap, stats as storeStats } from '../stores/checkinStore'
+import { user, isLoggedIn, logout as userLogout } from '../stores/userStore'
 
 const router = useRouter()
 const topics = ref([])
@@ -239,11 +240,9 @@ const showRules = ref(false)
 const showCalendar = ref(false)
 const unreadCount = ref(0)
 
-// 用户信息
-const user = JSON.parse(localStorage.getItem('user') || 'null')
-const isLoggedIn = computed(() => !!user)
-const userName = computed(() => user?.nickname || '小朋友')
-const userPhone = computed(() => user?.phone || '')
+// 用户信息（来自 userStore）
+const userName = computed(() => user.value?.nickname || '小朋友')
+const userPhone = computed(() => user.value?.phone || '')
 const userAvatar = computed(() => '🧒')
 
 // 日期
@@ -303,8 +302,7 @@ async function loadData() {
 }
 
 function handleLogout() {
-  localStorage.removeItem('user')
-  localStorage.removeItem('token')
+  userLogout()
   router.go(0)
 }
 
