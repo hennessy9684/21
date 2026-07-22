@@ -41,8 +41,8 @@
           <svg viewBox="0 0 320 180" class="score-chart">
             <defs>
               <linearGradient id="scoreGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                <stop offset="0%" style="stop-color:#667eea;stop-opacity:0.3" />
-                <stop offset="100%" style="stop-color:#667eea;stop-opacity:0" />
+                <stop offset="0%" style="stop-color:var(--color-accent);stop-opacity:0.3" />
+                <stop offset="100%" style="stop-color:var(--color-accent);stop-opacity:0" />
               </linearGradient>
             </defs>
             <g transform="translate(30, 10)">
@@ -50,9 +50,9 @@
               <text v-for="i in 5" :key="'ht'+i" x="-8" :y="(i-1)*40+4" text-anchor="end" font-size="10" fill="#999">{{ (5-i)*25 }}</text>
               <line x1="0" y1="0" x2="0" y2="160" stroke="#e0e0e0" stroke-width="1" />
               <path :d="areaPath" fill="url(#scoreGradient)" />
-              <path :d="linePath" fill="none" stroke="#667eea" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
-              <circle v-for="(point, idx) in chartPoints" :key="'p'+idx" :cx="point.x" :cy="point.y" r="6" fill="#fff" stroke="#667eea" stroke-width="2" />
-              <text v-for="(point, idx) in chartPoints" :key="'pt'+idx" :x="point.x" :y="point.y-12" text-anchor="middle" font-size="11" font-weight="600" fill="#667eea">{{ point.score }}</text>
+              <path :d="linePath" fill="none" stroke="var(--color-accent)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+              <circle v-for="(point, idx) in chartPoints" :key="'p'+idx" :cx="point.x" :cy="point.y" r="6" fill="#fff" stroke="var(--color-accent)" stroke-width="2" />
+              <text v-for="(point, idx) in chartPoints" :key="'pt'+idx" :x="point.x" :y="point.y-12" text-anchor="middle" font-size="11" font-weight="600" fill="var(--color-accent)">{{ point.score }}</text>
             </g>
             <g transform="translate(30, 170)">
               <text v-for="(t, idx) in trend" :key="'dt'+idx" :x="idx * (260 / (trend.length-1 || 1))" y="0" text-anchor="middle" font-size="10" fill="#999">D{{ t.day }}</text>
@@ -100,29 +100,14 @@
       </div>
     </div>
 
-    <nav class="bottom-nav">
-      <button class="nav-item" @click="router.push('/')">
-        <span>🏠</span><span>首页</span>
-      </button>
-      <button class="nav-item" @click="router.push('/checkin')">
-        <span>📅</span><span>打卡</span>
-      </button>
-      <button class="nav-item" @click="router.push('/stats')">
-        <span>📊</span><span>统计</span>
-      </button>
-      <button class="nav-item" @click="router.push('/messages')">
-        <span>💬</span><span>留言</span>
-      </button>
-      <button class="nav-item" @click="router.push('/my')">
-        <span>👤</span><span>我的</span>
-      </button>
-    </nav>
+    <BottomNav />
   </div>
 </template>
 
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import BottomNav from '../components/BottomNav.vue'
 import { getQuizHistory } from '../api/index.js'
 
 const router = useRouter()
@@ -259,7 +244,7 @@ onMounted(() => {
   display: block;
   font-size: 20px;
   font-weight: 800;
-  color: #667eea;
+  color: var(--color-accent);
 }
 
 .stat-label {
@@ -345,7 +330,7 @@ onMounted(() => {
 }
 
 .day-badge {
-  background: linear-gradient(135deg, #667eea, #764ba2);
+  background: linear-gradient(135deg, var(--color-accent), var(--color-accent-dark));
   color: white;
   width: 36px;
   height: 36px;
@@ -394,8 +379,8 @@ onMounted(() => {
 
 .score-circle.high {
   background: #f0fff4;
-  border-color: #2ed573;
-  color: #2ed573;
+  border-color: var(--color-success);
+  color: var(--color-success);
 }
 
 .score-circle.medium {
@@ -441,46 +426,10 @@ onMounted(() => {
 }
 
 .answer-item.correct {
-  color: #2ed573;
+  color: var(--color-success);
 }
 
 .answer-item.wrong {
   color: #ff6b6b;
-}
-
-.bottom-nav {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background: white;
-  display: flex;
-  justify-content: space-around;
-  padding: 10px 0;
-  border-radius: 20px 20px 0 0;
-  box-shadow: 0 -2px 20px rgba(0,0,0,0.08);
-  z-index: 50;
-}
-
-.nav-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-  background: none;
-  border: none;
-  font-size: 12px;
-  color: #999;
-  cursor: pointer;
-  padding: 5px 20px;
-}
-
-.nav-item.active {
-  color: #667eea;
-  font-weight: 700;
-}
-
-.nav-item span:first-child {
-  font-size: 22px;
 }
 </style>

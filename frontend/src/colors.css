@@ -1,0 +1,21 @@
+:root {
+  /* 主色 */
+  --color-primary: #3b82f6;
+  --color-primary-dark: #2563eb;
+  --gradient-primary: linear-gradient(135deg, #3b82f6, #2563eb);
+
+  /* 辅色（紫蓝） */
+  --color-accent: #667eea;
+  --color-accent-dark: #764ba2;
+  --gradient-accent: linear-gradient(135deg, #667eea, #764ba2);
+
+  /* 功能色 */
+  --color-danger: #ff4757;
+  --color-success: #2ed573;
+
+  /* 页面背景渐变 */
+  --bg-sky-start: #87CEEB;
+  --bg-sky-mid: #E0F4FF;
+  --bg-sky-end: #F0FDF4;
+  --bg-gradient: linear-gradient(180deg, #87CEEB 0%, #E0F4FF 40%, #F0FDF4 100%);
+}

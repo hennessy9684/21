@@ -92,30 +92,16 @@
     </div>
 
     <!-- 底部导航 -->
-    <nav class="bottom-nav">
-      <button class="nav-item" @click="router.push('/')">
-        <span>🏠</span><span>首页</span>
-      </button>
-      <button class="nav-item" @click="router.push('/checkin')">
-        <span>📅</span><span>打卡</span>
-      </button>
-      <button class="nav-item" @click="router.push('/stats')">
-        <span>📊</span><span>统计</span>
-      </button>
-      <button class="nav-item active">
-        <span>💬</span><span>留言</span>
-      </button>
-      <button class="nav-item" @click="router.push('/my')">
-        <span>👤</span><span>我的</span>
-      </button>
-    </nav>
+    <BottomNav activeTab="messages" />
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import BottomNav from '../components/BottomNav.vue'
 import { getMessages, postMessage, replyMessage, likeMessage } from '../api/index.js'
+import { formatTime } from '../utils/time.js'
 
 const router = useRouter()
 const messages = ref([])
@@ -140,17 +126,6 @@ function getAvatar(name) {
   return avatars[Math.abs(hash) % avatars.length]
 }
 
-function formatTime(dateStr) {
-  if (!dateStr) return ''
-  const d = new Date(dateStr)
-  const now = new Date()
-  const diff = now - d
-  if (diff < 60000) return '刚刚'
-  if (diff < 3600000) return `${Math.floor(diff / 60000)}分钟前`
-  if (diff < 86400000) return `${Math.floor(diff / 3600000)}小时前`
-  const pad = n => n.toString().padStart(2, '0')
-  return `${d.getMonth() + 1}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`
-}
 
 async function loadMessages(reset = true) {
   if (reset) {
@@ -235,7 +210,7 @@ onMounted(loadMessages)
 <style scoped>
 .msg-page {
   min-height: 100vh;
-  background: linear-gradient(180deg, #87CEEB 0%, #E0F4FF 40%, #F0FDF4 100%);
+  background: var(--bg-gradient);
   padding-bottom: 80px;
   font-family: -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif;
 }
@@ -289,7 +264,7 @@ onMounted(loadMessages)
 }
 .post-hint { font-size: 12px; color: #aaa; }
 .btn-post {
-  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  background: var(--gradient-primary);
   color: white;
   border: none;
   padding: 8px 20px;
@@ -301,7 +276,7 @@ onMounted(loadMessages)
 }
 .btn-post:hover:not(:disabled) { transform: scale(1.04); }
 .btn-post:disabled { opacity: 0.5; }
-.error-text { color: #ff4757; font-size: 12px; margin: 8px 0 0; text-align: center; }
+.error-text { color: var(--color-danger); font-size: 12px; margin: 8px 0 0; text-align: center; }
 
 /* Message List */
 .msg-list { padding: 8px 16px; }
@@ -383,7 +358,7 @@ onMounted(loadMessages)
 .reply-avatar { font-size: 24px; flex-shrink: 0; }
 .reply-body { flex: 1; min-width: 0; }
 .reply-header { display: flex; align-items: center; gap: 8px; margin-bottom: 3px; }
-.reply-name { font-size: 13px; font-weight: 600; color: #3b82f6; }
+.reply-name { font-size: 13px; font-weight: 600; color: var(--color-primary); }
 .reply-time { font-size: 11px; color: #bbb; }
 .reply-text { font-size: 13px; color: #555; margin: 0; line-height: 1.5; }
 .reply-input-row {
@@ -401,9 +376,9 @@ onMounted(loadMessages)
   font-family: inherit;
   transition: border-color 0.2s;
 }
-.reply-input:focus { border-color: #3b82f6; }
+.reply-input:focus { border-color: var(--color-primary); }
 .btn-send-reply {
-  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  background: var(--gradient-primary);
   color: white;
   border: none;
   padding: 8px 18px;
@@ -424,7 +399,7 @@ onMounted(loadMessages)
 .btn-load-more {
   background: white;
   border: 2px solid #e8ecf4;
-  color: #3b82f6;
+  color: var(--color-primary);
   padding: 10px 32px;
   border-radius: 20px;
   font-size: 13px;
@@ -434,40 +409,11 @@ onMounted(loadMessages)
 }
 .btn-load-more:hover:not(:disabled) {
   background: #eff6ff;
-  border-color: #3b82f6;
+  border-color: var(--color-primary);
 }
 .btn-load-more:disabled { opacity: 0.5; cursor: default; }
 .no-more {
   font-size: 12px;
   color: #bbb;
 }
-
-/* Bottom Nav */
-.bottom-nav {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background: white;
-  display: flex;
-  justify-content: space-around;
-  padding: 10px 0;
-  border-radius: 20px 20px 0 0;
-  box-shadow: 0 -2px 20px rgba(0,0,0,0.08);
-  z-index: 50;
-}
-.nav-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-  background: none;
-  border: none;
-  font-size: 12px;
-  color: #999;
-  cursor: pointer;
-  padding: 5px 16px;
-}
-.nav-item.active { color: #3b82f6; font-weight: 700; }
-.nav-item span:first-child { font-size: 22px; }
 </style>

@@ -41,7 +41,7 @@
         <svg viewBox="0 0 200 200" class="progress-ring">
           <defs>
             <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stop-color="#667eea" />
+              <stop offset="0%" stop-color="var(--color-accent)" />
               <stop offset="100%" stop-color="#e84393" />
             </linearGradient>
           </defs>
@@ -189,23 +189,7 @@
     </section>
 
     <!-- 底部导航 -->
-    <nav class="bottom-nav">
-      <button class="nav-item active">
-        <span>🏠</span><span>首页</span>
-      </button>
-      <button class="nav-item" @click="isLoggedIn ? router.push('/checkin') : router.push('/login')">
-        <span>📅</span><span>打卡</span>
-      </button>
-      <button class="nav-item" @click="isLoggedIn ? router.push('/stats') : router.push('/login')">
-        <span>📊</span><span>统计</span>
-      </button>
-      <button class="nav-item" @click="isLoggedIn ? router.push('/messages') : router.push('/login')">
-        <span>💬</span><span>留言</span>
-      </button>
-      <button class="nav-item" @click="router.push('/my')">
-        <span>👤</span><span>我的</span>
-      </button>
-    </nav>
+    <BottomNav activeTab="home" />
   </div>
 
   <!-- 日历弹窗 -->
@@ -243,6 +227,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import BottomNav from '../components/BottomNav.vue'
 import { getTopics, getNotifications } from '../api/index.js'
 import { fetchCheckIns, fetchStats, checkinMap, stats as storeStats } from '../stores/checkinStore.js'
 
@@ -344,7 +329,7 @@ onMounted(() => {
 <style scoped>
 .home-page {
   min-height: 100vh;
-  background: linear-gradient(180deg, #87CEEB 0%, #E0F4FF 40%, #F0FDF4 100%);
+  background: var(--bg-gradient);
   padding-bottom: 80px;
   font-family: -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif;
 }
@@ -384,7 +369,7 @@ onMounted(() => {
 .brand-icon { font-size: 28px; }
 .brand-name { font-size: 17px; font-weight: 800; color: #1a1a2e; }
 .btn-login {
-  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  background: var(--gradient-primary);
   color: white;
   border: none;
   padding: 8px 18px;
@@ -482,7 +467,7 @@ onMounted(() => {
 .ring-num {
   font-size: 36px;
   font-weight: 900;
-  color: #3b82f6;
+  color: var(--color-primary);
   line-height: 1;
 }
 .ring-total {
@@ -517,7 +502,7 @@ onMounted(() => {
   padding: 0 20px 20px;
 }
 .guide-card {
-  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  background: var(--gradient-primary);
   border-radius: 20px;
   padding: 18px 20px;
   display: flex;
@@ -553,7 +538,7 @@ onMounted(() => {
 .btn-link {
   background: none;
   border: none;
-  color: #667eea;
+  color: var(--color-accent);
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
@@ -578,8 +563,8 @@ onMounted(() => {
   background: linear-gradient(135deg, #22c55e, #16a34a);
 }
 .day-card.today {
-  background: linear-gradient(135deg, #3b82f6, #2563eb);
-  border: 2px solid #3b82f6;
+  background: var(--gradient-primary);
+  border: 2px solid var(--color-primary);
   animation: pulse 1.5s infinite;
 }
 .day-card.done .day-num, .day-card.today .day-num { color: white; }
@@ -591,7 +576,7 @@ onMounted(() => {
   position: absolute;
   top: 2px;
   right: 2px;
-  background: #3b82f6;
+  background: var(--color-primary);
   color: white;
   font-size: 10px;
   padding: 1px 5px;
@@ -635,7 +620,7 @@ onMounted(() => {
 .task-status { flex-shrink: 0; margin-left: 10px; }
 .task-done { color: #22c55e; font-weight: 700; font-size: 14px; }
 .task-go {
-  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  background: var(--gradient-primary);
   color: white;
   padding: 6px 14px;
   border-radius: 15px;
@@ -666,7 +651,7 @@ onMounted(() => {
   font-size: 13px;
 }
 .next-label { color: #888; font-weight: 600; }
-.next-name { color: #667eea; font-weight: 700; }
+.next-name { color: var(--color-accent); font-weight: 700; }
 
 /* Rules */
 .rules-section {
@@ -696,7 +681,7 @@ onMounted(() => {
 .rule-num {
   width: 26px;
   height: 26px;
-  background: linear-gradient(135deg, #667eea, #764ba2);
+  background: linear-gradient(135deg, var(--color-accent), var(--color-accent-dark));
   color: white;
   border-radius: 50%;
   display: flex;
@@ -709,37 +694,7 @@ onMounted(() => {
 .rule-title { font-size: 14px; font-weight: 700; color: #333; }
 .rule-desc { font-size: 12px; color: #888; margin-top: 3px; line-height: 1.5; }
 
-/* Bottom Nav */
-.bottom-nav {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background: white;
-  display: flex;
-  justify-content: space-around;
-  padding: 10px 0;
-  border-radius: 20px 20px 0 0;
-  box-shadow: 0 -2px 20px rgba(0,0,0,0.08);
-  z-index: 50;
-}
-.nav-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-  background: none;
-  border: none;
-  font-size: 12px;
-  color: #999;
-  cursor: pointer;
-  padding: 5px 20px;
-}
-.nav-item.active { color: #3b82f6; font-weight: 700; }
-.nav-item span:first-child { font-size: 22px; }
-
 /* 快捷入口 */
-.quick-links-section { padding: 0 16px; margin-bottom: 16px; }
 .quick-links-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
 .quick-link {
   position: relative;
@@ -759,7 +714,7 @@ onMounted(() => {
 .quick-link span:last-of-type { font-size: 12px; color: #555; font-weight: 600; }
 .badge {
   position: absolute; top: 6px; right: 8px;
-  background: #ff4757; color: white;
+  background: var(--color-danger); color: white;
   font-size: 10px; min-width: 16px; height: 16px;
   border-radius: 8px; display: flex;
   align-items: center; justify-content: center;
@@ -786,8 +741,8 @@ onMounted(() => {
 .calendar-legend { display: flex; gap: 16px; margin-bottom: 14px; font-size: 12px; color: #777; }
 .calendar-legend span { display: flex; align-items: center; gap: 4px; }
 .legend-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
-.legend-dot.done { background: #2ed573; }
-.legend-dot.today { background: #667eea; }
+.legend-dot.done { background: var(--color-success); }
+.legend-dot.today { background: var(--color-accent); }
 .legend-dot.locked { background: #ddd; }
 .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; }
 .cal-day {
@@ -796,8 +751,8 @@ onMounted(() => {
   transition: transform 0.15s; position: relative;
 }
 .cal-day:active { transform: scale(0.95); }
-.cal-done { background: #e8faf0; border: 2px solid #2ed573; }
-.cal-today { background: #eef0ff; border: 2px solid #667eea; }
+.cal-done { background: #e8faf0; border: 2px solid var(--color-success); }
+.cal-today { background: #eef0ff; border: 2px solid var(--color-accent); }
 .cal-locked { background: #f5f5f5; border: 2px solid #eee; cursor: not-allowed; opacity: 0.6; }
 .cal-day-icon { font-size: 20px; }
 .cal-day-num { font-size: 11px; color: #888; font-weight: 700; }

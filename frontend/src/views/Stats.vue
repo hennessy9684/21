@@ -164,7 +164,7 @@
           <div class="health-ring-wrap">
             <svg viewBox="0 0 140 140" class="health-ring">
               <circle cx="70" cy="70" r="60" fill="none" stroke="#ffe0e0" stroke-width="14"/>
-              <circle cx="70" cy="70" r="60" fill="none" stroke="#2ed573" stroke-width="14"
+              <circle cx="70" cy="70" r="60" fill="none" stroke="var(--color-success)" stroke-width="14"
                 :stroke-dasharray="377"
                 :stroke-dashoffset="377 - 377 * data.report.healthy_rate / 100"
                 stroke-linecap="round"
@@ -193,29 +193,14 @@
     </div>
 
     <!-- 底部导航 -->
-    <nav class="bottom-nav">
-      <button class="nav-item" @click="router.push('/')">
-        <span>🏠</span><span>首页</span>
-      </button>
-      <button class="nav-item" @click="router.push('/checkin')">
-        <span>📅</span><span>打卡</span>
-      </button>
-      <button class="nav-item active">
-        <span>📊</span><span>统计</span>
-      </button>
-      <button class="nav-item" @click="router.push('/messages')">
-        <span>💬</span><span>留言</span>
-      </button>
-      <button class="nav-item" @click="router.push('/my')">
-        <span>👤</span><span>我的</span>
-      </button>
-    </nav>
+    <BottomNav activeTab="stats" />
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import BottomNav from '../components/BottomNav.vue'
 import { fetchUsageStats, usageStats } from '../stores/checkinStore.js'
 
 const router = useRouter()
@@ -267,7 +252,7 @@ onMounted(loadData)
 <style scoped>
 .stats-page {
   min-height: 100vh;
-  background: linear-gradient(180deg, #87CEEB 0%, #E0F4FF 40%, #F0FDF4 100%);
+  background: var(--bg-gradient);
   padding-bottom: 80px;
   font-family: -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif;
 }
@@ -302,7 +287,7 @@ onMounted(loadData)
 .empty-state h3 { color: #333; margin: 0 0 6px; }
 .empty-state p { color: #888; font-size: 14px; margin: 0 0 20px; }
 .btn-primary {
-  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  background: var(--gradient-primary);
   color: white;
   border: none;
   padding: 12px 28px;
@@ -341,7 +326,7 @@ onMounted(loadData)
   justify-content: center;
 }
 .score-num { font-size: 22px; font-weight: 900; line-height: 1; }
-.score-num.green { color: #2ed573; }
+.score-num.green { color: var(--color-success); }
 .score-num.orange { color: #ffa502; }
 .score-num.red { color: #ff6b6b; }
 .score-label { font-size: 11px; color: #888; }
@@ -358,7 +343,7 @@ onMounted(loadData)
   text-align: center;
 }
 .r-num { font-size: 18px; font-weight: 800; display: block; }
-.r-num.green { color: #2ed573; }
+.r-num.green { color: var(--color-success); }
 .r-num.red { color: #ff6b6b; }
 .r-num.orange { color: #ffa502; }
 .r-label { font-size: 11px; color: #888; margin-top: 2px; display: block; }
@@ -505,7 +490,7 @@ onMounted(loadData)
   border-radius: 7px;
   transition: height 0.6s ease;
 }
-.trend-low { background: #2ed573; }
+.trend-low { background: var(--color-success); }
 .trend-mid { background: #ffa502; }
 .trend-high { background: #ff6b6b; }
 .trend-label { font-size: 10px; color: #888; font-weight: 600; }
@@ -523,7 +508,7 @@ onMounted(loadData)
   text-align: center;
   box-shadow: 0 2px 10px rgba(0,0,0,0.04);
 }
-.week-good { border-bottom: 3px solid #2ed573; }
+.week-good { border-bottom: 3px solid var(--color-success); }
 .week-warn { border-bottom: 3px solid #ffa502; }
 .week-bad { border-bottom: 3px solid #ff6b6b; }
 .week-emoji { font-size: 28px; display: block; margin-bottom: 6px; }
@@ -531,7 +516,7 @@ onMounted(loadData)
 .week-range { font-size: 11px; color: #999; margin: 2px 0 8px; }
 .week-stats { font-size: 11px; color: #888; display: flex; flex-direction: column; gap: 2px; }
 .week-rate { font-size: 14px; font-weight: 800; margin-top: 8px; }
-.text-green { color: #2ed573; }
+.text-green { color: var(--color-success); }
 .text-orange { color: #ffa502; }
 .text-red { color: #ff6b6b; }
 
@@ -560,7 +545,7 @@ onMounted(loadData)
   align-items: center;
   justify-content: center;
 }
-.health-pct { font-size: 26px; font-weight: 900; color: #2ed573; line-height: 1; }
+.health-pct { font-size: 26px; font-weight: 900; color: var(--color-success); line-height: 1; }
 .health-sub { font-size: 11px; color: #888; }
 .health-info { flex: 1; display: flex; flex-direction: column; gap: 14px; }
 .health-row {
@@ -572,35 +557,6 @@ onMounted(loadData)
 }
 .health-row strong { margin-left: auto; color: #333; }
 .health-dot { width: 10px; height: 10px; border-radius: 50%; }
-.health-dot.green { background: #2ed573; }
+.health-dot.green { background: var(--color-success); }
 .health-dot.red { background: #ff6b6b; }
-
-/* Bottom Nav */
-.bottom-nav {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background: white;
-  display: flex;
-  justify-content: space-around;
-  padding: 10px 0;
-  border-radius: 20px 20px 0 0;
-  box-shadow: 0 -2px 20px rgba(0,0,0,0.08);
-  z-index: 50;
-}
-.nav-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-  background: none;
-  border: none;
-  font-size: 12px;
-  color: #999;
-  cursor: pointer;
-  padding: 5px 16px;
-}
-.nav-item.active { color: #3b82f6; font-weight: 700; }
-.nav-item span:first-child { font-size: 22px; }
 </style>

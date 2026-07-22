@@ -380,29 +380,14 @@
     </div>
     </div>
 
-    <nav class="bottom-nav">
-      <button class="nav-item" @click="router.push('/')">
-        <span>🏠</span><span>首页</span>
-      </button>
-      <button class="nav-item active">
-        <span>📅</span><span>打卡</span>
-      </button>
-      <button class="nav-item" @click="router.push('/stats')">
-        <span>📊</span><span>统计</span>
-      </button>
-      <button class="nav-item" @click="router.push('/messages')">
-        <span>💬</span><span>留言</span>
-      </button>
-      <button class="nav-item" @click="router.push('/my')">
-        <span>👤</span><span>我的</span>
-      </button>
-    </nav>
+    <BottomNav activeTab="checkin" />
   </div>
 </template>
 
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import BottomNav from '../components/BottomNav.vue'
 import { getTopics, submitCheckIn, getQuizQuestions, submitQuiz as submitQuizApi, getProfile } from '../api/index.js'
 import { fetchCheckIns, fetchStats, checkinMap, stats as storeStats, invalidateCheckins } from '../stores/checkinStore.js'
 
@@ -810,7 +795,7 @@ onMounted(async () => {
 <style scoped>
 .checkin-page {
   min-height: 100vh;
-  background: linear-gradient(180deg, #87CEEB 0%, #E0F4FF 40%, #F0FDF4 100%);
+  background: var(--bg-gradient);
   padding-bottom: 80px;
   font-family: -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif;
 }
@@ -841,7 +826,7 @@ onMounted(async () => {
   text-align: left;
 }
 .block-step.done { background: #f0fdf4; }
-.block-step.current { background: #eff6ff; border: 2px solid #3b82f6; }
+.block-step.current { background: #eff6ff; border: 2px solid var(--color-primary); }
 .step-num {
   width: 32px; height: 32px;
   border-radius: 50%;
@@ -850,7 +835,7 @@ onMounted(async () => {
   font-size: 14px; font-weight: 700; color: #666;
   flex-shrink: 0;
 }
-.block-step.current .step-num { background: #3b82f6; color: white; }
+.block-step.current .step-num { background: var(--color-primary); color: white; }
 .block-step.done .step-num { background: #22c55e; }
 .step-title { font-size: 15px; font-weight: 700; color: #333; display: block; }
 .step-desc { font-size: 12px; color: #999; margin-top: 2px; display: block; }
@@ -862,7 +847,7 @@ onMounted(async () => {
 .step-connector.done { background: #22c55e; }
 .btn-block-action {
   width: 100%;
-  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  background: var(--gradient-primary);
   color: white; border: none;
   padding: 14px; border-radius: 14px;
   font-size: 16px; font-weight: 700;
@@ -1027,7 +1012,7 @@ onMounted(async () => {
   background: linear-gradient(135deg, #22c55e, #16a34a);
 }
 .day-circle.current {
-  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  background: var(--gradient-primary);
   animation: pulse 1.5s infinite;
 }
 .day-circle.locked {
@@ -1094,7 +1079,7 @@ onMounted(async () => {
 .question-num {
   width: 28px;
   height: 28px;
-  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  background: var(--gradient-primary);
   border-radius: 50%;
   color: white;
   font-size: 14px;
@@ -1112,7 +1097,7 @@ onMounted(async () => {
 .question-tag {
   font-size: 11px;
   color: white;
-  background: #3b82f6;
+  background: var(--color-primary);
   padding: 2px 8px;
   border-radius: 8px;
   font-weight: 600;
@@ -1139,7 +1124,7 @@ onMounted(async () => {
 }
 .option-item.selected {
   background: #eff6ff;
-  border-color: #3b82f6;
+  border-color: var(--color-primary);
 }
 .option-letter {
   width: 28px;
@@ -1154,7 +1139,7 @@ onMounted(async () => {
   color: #64748b;
 }
 .option-item.selected .option-letter {
-  background: #3b82f6;
+  background: var(--color-primary);
   color: white;
 }
 .option-label {
@@ -1189,7 +1174,7 @@ onMounted(async () => {
 }
 .activity-item.selected {
   background: #eff6ff;
-  border-color: #3b82f6;
+  border-color: var(--color-primary);
 }
 .activity-icon {
   font-size: 24px;
@@ -1209,7 +1194,7 @@ onMounted(async () => {
   right: 4px;
   width: 18px;
   height: 18px;
-  background: #3b82f6;
+  background: var(--color-primary);
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -1241,7 +1226,7 @@ onMounted(async () => {
   transition: border-color 0.2s;
 }
 .question-textarea:focus {
-  border-color: #3b82f6;
+  border-color: var(--color-primary);
 }
 
 .mood-selector {
@@ -1285,7 +1270,7 @@ onMounted(async () => {
 }
 .btn-next {
   flex: 2;
-  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  background: var(--gradient-primary);
   color: white;
   border: none;
   padding: 14px;
@@ -1306,7 +1291,7 @@ onMounted(async () => {
 
 .btn-submit {
   flex: 2;
-  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  background: var(--gradient-primary);
   color: white;
   border: none;
   padding: 14px;
@@ -1409,7 +1394,7 @@ onMounted(async () => {
 }
 .quiz-option:hover { background: #eff6ff; }
 .quiz-option.selected {
-  border-color: #3b82f6;
+  border-color: var(--color-primary);
   background: #eff6ff;
   color: #333;
 }
@@ -1423,8 +1408,8 @@ onMounted(async () => {
   position: relative;
 }
 .quiz-radio-dot.checked {
-  border-color: #3b82f6;
-  background: #3b82f6;
+  border-color: var(--color-primary);
+  background: var(--color-primary);
 }
 .quiz-radio-dot.checked::after {
   content: '';
@@ -1518,7 +1503,7 @@ onMounted(async () => {
 
 .btn-primary {
   width: 100%;
-  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  background: var(--gradient-primary);
   color: white;
   border: none;
   padding: 14px;
@@ -1575,7 +1560,7 @@ onMounted(async () => {
   color: #22c55e; margin: 0 0 8px; font-size: 24px; font-weight: 800;
 }
 .success-badge {
-  display: inline-block; background: linear-gradient(135deg, #3b82f6, #2563eb);
+  display: inline-block; background: var(--gradient-primary);
   color: white; font-size: 13px; padding: 4px 16px;
   border-radius: 20px; font-weight: 700; margin-bottom: 8px;
 }
@@ -1638,7 +1623,7 @@ onMounted(async () => {
   border-bottom: 1px solid #f1f5f9;
 }
 .done-icon { font-size: 44px; }
-.done-header h3 { color: #3b82f6; margin: 0; font-size: 14px; }
+.done-header h3 { color: var(--color-primary); margin: 0; font-size: 14px; }
 .done-header h4 { color: #333; margin: 4px 0 0; font-size: 18px; font-weight: 800; }
 .done-body { margin-bottom: 20px; }
 .done-field {
@@ -1651,32 +1636,4 @@ onMounted(async () => {
 }
 .done-label { font-size: 13px; color: #888; flex-shrink: 0; font-weight: 600; }
 .done-value { font-size: 13px; color: #333; text-align: right; line-height: 1.5; }
-
-.bottom-nav {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background: white;
-  display: flex;
-  justify-content: space-around;
-  padding: 10px 0;
-  border-radius: 20px 20px 0 0;
-  box-shadow: 0 -2px 20px rgba(0,0,0,0.08);
-  z-index: 50;
-}
-.nav-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-  background: none;
-  border: none;
-  font-size: 12px;
-  color: #999;
-  cursor: pointer;
-  padding: 5px 20px;
-}
-.nav-item.active { color: #3b82f6; font-weight: 700; }
-.nav-item span:first-child { font-size: 22px; }
 </style>

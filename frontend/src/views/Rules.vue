@@ -96,7 +96,7 @@ const router = useRouter()
   z-index: 30;
   cursor: pointer;
 }
-.back-btn { color: #667eea; font-weight: 600; font-size: 14px; }
+.back-btn { color: var(--color-accent); font-weight: 600; font-size: 14px; }
 .header h2 { font-size: 17px; margin: 0; color: #333; }
 .content { padding: 14px 16px; }
 .card {
@@ -132,9 +132,9 @@ const router = useRouter()
   padding: 6px 0;
 }
 .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-.dot.green { background: #2ed573; }
+.dot.green { background: var(--color-success); }
 .dot.red { background: #ff6b6b; }
-.dot.blue { background: #667eea; }
+.dot.blue { background: var(--color-accent); }
 .badge-list { display: flex; flex-direction: column; gap: 6px; }
 .badge-row {
   display: flex;

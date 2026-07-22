@@ -27,7 +27,7 @@
             <span v-if="!n.is_read" class="n-dot"></span>
           </div>
           <p class="n-content">{{ n.content }}</p>
-          <span class="n-time">{{ formatTime(n.created_at) }}</span>
+          <span class="n-time">{{ formatTime(n.created_at, 'short') }}</span>
         </div>
       </div>
     </div>
@@ -48,6 +48,7 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { getNotifications, markNotificationsRead, markAllNotificationsRead } from '../api/index.js'
+import { formatTime } from '../utils/time.js'
 
 const router = useRouter()
 const notifs = ref([])
@@ -56,17 +57,6 @@ const loading = ref(true)
 const loadingMore = ref(false)
 const page = ref(1)
 const hasMore = ref(false)
-
-function formatTime(s) {
-  if (!s) return ''
-  const d = new Date(s)
-  const now = new Date()
-  const diff = now - d
-  if (diff < 60000) return '刚刚'
-  if (diff < 3600000) return `${Math.floor(diff / 60000)}分钟前`
-  if (diff < 86400000) return `${Math.floor(diff / 3600000)}小时前`
-  return `${d.getMonth() + 1}月${d.getDate()}日`
-}
 
 async function loadNotifs(reset = true) {
   if (reset) {
@@ -134,12 +124,12 @@ onMounted(loadNotifs)
   z-index: 30;
 }
 .back-btn {
-  background: none; border: none; color: #667eea;
+  background: none; border: none; color: var(--color-accent);
   font-weight: 600; font-size: 14px; cursor: pointer;
 }
 .header h2 { font-size: 17px; margin: 0; color: #333; }
 .mark-btn {
-  background: none; border: none; color: #667eea;
+  background: none; border: none; color: var(--color-accent);
   font-size: 13px; cursor: pointer; font-weight: 600;
 }
 
@@ -165,12 +155,12 @@ onMounted(loadNotifs)
   transition: transform 0.15s;
 }
 .notif-card:active { transform: scale(0.98); }
-.notif-card.unread { border-left: 3px solid #667eea; background: #fafbff; }
+.notif-card.unread { border-left: 3px solid var(--color-accent); background: #fafbff; }
 .n-icon { font-size: 28px; flex-shrink: 0; }
 .n-body { flex: 1; min-width: 0; }
 .n-header { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
 .n-title { font-size: 14px; font-weight: 700; color: #333; }
-.n-dot { width: 7px; height: 7px; background: #ff4757; border-radius: 50%; }
+.n-dot { width: 7px; height: 7px; background: var(--color-danger); border-radius: 50%; }
 .n-content { font-size: 13px; color: #666; margin: 0 0 6px; line-height: 1.5; }
 .n-time { font-size: 11px; color: #bbb; }
 
@@ -183,7 +173,7 @@ onMounted(loadNotifs)
 .btn-load-more {
   background: white;
   border: 2px solid #e8ecf4;
-  color: #667eea;
+  color: var(--color-accent);
   padding: 10px 32px;
   border-radius: 20px;
   font-size: 13px;
@@ -193,7 +183,7 @@ onMounted(loadNotifs)
 }
 .btn-load-more:hover:not(:disabled) {
   background: #f0f4ff;
-  border-color: #667eea;
+  border-color: var(--color-accent);
 }
 .btn-load-more:disabled { opacity: 0.5; cursor: default; }
 .no-more {

@@ -141,29 +141,14 @@
       </div>
     </div>
 
-    <nav class="bottom-nav">
-      <button class="nav-item" @click="router.push('/')">
-        <span>🏠</span><span>首页</span>
-      </button>
-      <button class="nav-item" @click="router.push('/checkin')">
-        <span>📅</span><span>打卡</span>
-      </button>
-      <button class="nav-item" @click="router.push('/stats')">
-        <span>📊</span><span>统计</span>
-      </button>
-      <button class="nav-item" @click="router.push('/messages')">
-        <span>💬</span><span>留言</span>
-      </button>
-      <button class="nav-item" @click="router.push('/my')">
-        <span>👤</span><span>我的</span>
-      </button>
-    </nav>
+    <BottomNav />
   </div>
 </template>
 
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import BottomNav from '../components/BottomNav.vue'
 import { getProfile, submitAuth, getSchools } from '../api/index.js'
 
 const router = useRouter()
@@ -352,7 +337,7 @@ onMounted(() => {
 }
 
 .status-card.approved {
-  border-color: #2ed573;
+  border-color: var(--color-success);
   background: #f0fff4;
 }
 
@@ -380,7 +365,7 @@ onMounted(() => {
 
 .btn-goto-checkin {
   margin-top: 10px;
-  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  background: var(--gradient-primary);
   color: white;
   border: none;
   padding: 8px 20px;
@@ -452,7 +437,7 @@ onMounted(() => {
 }
 
 .form-input:focus {
-  border-color: #667eea;
+  border-color: var(--color-accent);
 }
 
 .form-hint {
@@ -481,7 +466,7 @@ onMounted(() => {
 }
 
 .error-text {
-  color: #ff4757;
+  color: var(--color-danger);
   font-size: 13px;
   text-align: center;
   margin: 0 0 10px;
@@ -489,7 +474,7 @@ onMounted(() => {
 
 .btn-submit {
   width: 100%;
-  background: linear-gradient(135deg, #667eea, #764ba2);
+  background: var(--gradient-accent);
   color: white;
   border: none;
   padding: 14px;
@@ -557,41 +542,5 @@ onMounted(() => {
   font-size: 12px;
   color: #666;
   margin-bottom: 4px;
-}
-
-.bottom-nav {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background: white;
-  display: flex;
-  justify-content: space-around;
-  padding: 10px 0;
-  border-radius: 20px 20px 0 0;
-  box-shadow: 0 -2px 20px rgba(0,0,0,0.08);
-  z-index: 50;
-}
-
-.nav-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-  background: none;
-  border: none;
-  font-size: 12px;
-  color: #999;
-  cursor: pointer;
-  padding: 5px 20px;
-}
-
-.nav-item.active {
-  color: #667eea;
-  font-weight: 700;
-}
-
-.nav-item span:first-child {
-  font-size: 22px;
 }
 </style>

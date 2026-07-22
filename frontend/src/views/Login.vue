@@ -167,7 +167,7 @@ async function handleRegister() {
 <style scoped>
 .login-page {
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--color-accent) 0%, var(--color-accent-dark) 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -222,7 +222,7 @@ async function handleRegister() {
   transition: color 0.3s;
 }
 .tab-bar span.active {
-  color: #667eea;
+  color: var(--color-accent);
 }
 .tab-bar span.active::after {
   content: '';
@@ -231,7 +231,7 @@ async function handleRegister() {
   left: 0;
   width: 100%;
   height: 3px;
-  background: #667eea;
+  background: var(--color-accent);
   border-radius: 3px;
 }
 .form {
@@ -249,7 +249,7 @@ async function handleRegister() {
   transition: border-color 0.3s;
 }
 .input-group:focus-within {
-  border-color: #667eea;
+  border-color: var(--color-accent);
 }
 .input-icon {
   font-size: 20px;
@@ -266,7 +266,7 @@ async function handleRegister() {
 }
 .code-group .btn-code {
   white-space: nowrap;
-  background: #667eea;
+  background: var(--color-accent);
   color: white;
   border: none;
   padding: 8px 14px;
@@ -279,7 +279,7 @@ async function handleRegister() {
   background: #ccc;
 }
 .btn-primary {
-  background: linear-gradient(135deg, #667eea, #764ba2);
+  background: var(--gradient-accent);
   color: white;
   border: none;
   padding: 15px;
@@ -299,12 +299,12 @@ async function handleRegister() {
   cursor: not-allowed;
 }
 .error {
-  color: #ff4757;
+  color: var(--color-danger);
   font-size: 13px;
   margin: 0;
 }
 .success {
-  color: #2ed573;
+  color: var(--color-success);
   font-size: 13px;
   margin: 10px 0 0;
 }
@@ -327,7 +327,7 @@ async function handleRegister() {
   transition: color 0.3s;
 }
 .btn-admin:hover {
-  color: #667eea;
+  color: var(--color-accent);
 }
 .btn-admin span {
   font-size: 14px;

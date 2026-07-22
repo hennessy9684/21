@@ -212,29 +212,14 @@
     </div>
 
     <!-- 底部导航 -->
-    <nav class="bottom-nav">
-      <button class="nav-item" @click="router.push('/')">
-        <span>🏠</span><span>首页</span>
-      </button>
-      <button class="nav-item" @click="router.push('/checkin')">
-        <span>📅</span><span>打卡</span>
-      </button>
-      <button class="nav-item" @click="router.push('/stats')">
-        <span>📊</span><span>统计</span>
-      </button>
-      <button class="nav-item" @click="router.push('/messages')">
-        <span>💬</span><span>留言</span>
-      </button>
-      <button class="nav-item active">
-        <span>👤</span><span>我的</span>
-      </button>
-    </nav>
+    <BottomNav activeTab="my" />
   </div>
 </template>
 
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import BottomNav from '../components/BottomNav.vue'
 import { getProfile, updateProfile, getAchievements } from '../api/index.js'
 
 const router = useRouter()
@@ -399,7 +384,7 @@ onMounted(() => {
 <style scoped>
 .my-page {
   min-height: 100vh;
-  background: linear-gradient(180deg, #87CEEB 0%, #E0F4FF 40%, #F0FDF4 100%);
+  background: var(--bg-gradient);
   padding-bottom: 80px;
   font-family: -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif;
 }
@@ -410,7 +395,7 @@ onMounted(() => {
   align-items: center;
   gap: 14px;
   padding: 20px 16px;
-  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  background: var(--gradient-primary);
   color: white;
 }
 .header-avatar { font-size: 48px; }
@@ -446,7 +431,7 @@ onMounted(() => {
 }
 .tab-item.active {
   background: #eff6ff;
-  color: #3b82f6;
+  color: var(--color-primary);
   font-weight: 700;
 }
 .tab-item span:first-child { font-size: 16px; }
@@ -492,7 +477,7 @@ onMounted(() => {
   background: #fafbfd;
   transition: border-color 0.2s;
 }
-.field-input:focus { border-color: #3b82f6; }
+.field-input:focus { border-color: var(--color-primary); }
 .field-input:disabled { background: #f0f0f0; color: #999; }
 
 /* Avatar Grid */
@@ -515,7 +500,7 @@ onMounted(() => {
   transition: all 0.2s;
 }
 .avatar-option.selected {
-  border-color: #3b82f6;
+  border-color: var(--color-primary);
   background: #eff6ff;
   transform: scale(1.1);
 }
@@ -538,14 +523,14 @@ onMounted(() => {
   color: #888;
 }
 .gender-btn.selected {
-  border-color: #3b82f6;
+  border-color: var(--color-primary);
   background: #eff6ff;
-  color: #3b82f6;
+  color: var(--color-primary);
 }
 
 .btn-save {
   width: 100%;
-  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  background: var(--gradient-primary);
   color: white;
   border: none;
   padding: 14px;
@@ -560,9 +545,9 @@ onMounted(() => {
   text-align: center;
   font-size: 13px;
   margin: 8px 0 0;
-  color: #ff4757;
+  color: var(--color-danger);
 }
-.save-msg.ok { color: #2ed573; }
+.save-msg.ok { color: var(--color-success); }
 
 /* Badges */
 .badge-summary {
@@ -575,7 +560,7 @@ onMounted(() => {
   flex-direction: column;
   align-items: center;
 }
-.bs-num { font-size: 24px; font-weight: 900; color: #3b82f6; }
+.bs-num { font-size: 24px; font-weight: 900; color: var(--color-primary); }
 .bs-label { font-size: 11px; color: #888; margin-top: 2px; }
 .badge-progress {
   height: 8px;
@@ -585,7 +570,7 @@ onMounted(() => {
 }
 .badge-progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, #3b82f6, #22c55e);
+  background: linear-gradient(90deg, var(--color-primary), #22c55e);
   border-radius: 8px;
   transition: width 0.8s;
 }
@@ -651,7 +636,7 @@ onMounted(() => {
   transition: 0.3s;
   box-shadow: 0 1px 4px rgba(0,0,0,0.15);
 }
-.toggle-switch input:checked + .toggle-slider { background: #3b82f6; }
+.toggle-switch input:checked + .toggle-slider { background: var(--color-primary); }
 .toggle-switch input:checked + .toggle-slider::after { left: 23px; }
 
 .settings-btn {
@@ -703,7 +688,7 @@ onMounted(() => {
   box-sizing: border-box;
   font-family: inherit;
 }
-.feedback-input:focus { border-color: #3b82f6; }
+.feedback-input:focus { border-color: var(--color-primary); }
 .modal-actions {
   display: flex;
   gap: 10px;
@@ -719,45 +704,16 @@ onMounted(() => {
   border: none;
 }
 .modal-btn.cancel { background: #f5f5f5; color: #888; }
-.modal-btn.confirm { background: linear-gradient(135deg, #3b82f6, #2563eb); color: white; }
+.modal-btn.confirm { background: var(--gradient-primary); color: white; }
 .modal-btn.confirm:disabled { opacity: 0.5; }
-.feedback-ok { text-align: center; color: #2ed573; font-size: 13px; margin: 10px 0 0; }
-
-/* Bottom Nav */
-.bottom-nav {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background: white;
-  display: flex;
-  justify-content: space-around;
-  padding: 10px 0;
-  border-radius: 20px 20px 0 0;
-  box-shadow: 0 -2px 20px rgba(0,0,0,0.08);
-  z-index: 50;
-}
-.nav-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-  background: none;
-  border: none;
-  font-size: 12px;
-  color: #999;
-  cursor: pointer;
-  padding: 5px 12px;
-}
-.nav-item.active { color: #3b82f6; font-weight: 700; }
-.nav-item span:first-child { font-size: 20px; }
+.feedback-ok { text-align: center; color: var(--color-success); font-size: 13px; margin: 10px 0 0; }
 
 /* 学号认证引导横幅 */
 .auth-guide-banner {
   display: flex;
   align-items: center;
   gap: 8px;
-  background: linear-gradient(135deg, #4287f5, #2563eb);
+  background: var(--gradient-primary);
   color: white;
   padding: 12px 16px;
   border-radius: 14px;
@@ -808,7 +764,7 @@ onMounted(() => {
 }
 .auth-status.approved {
   background: #f0fff4;
-  color: #2ed573;
+  color: var(--color-success);
 }
 .auth-status.rejected {
   background: #fff5f5;
@@ -821,7 +777,7 @@ onMounted(() => {
 }
 .auth-btn {
   width: 100%;
-  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  background: var(--gradient-primary);
   color: white;
   border: none;
   padding: 12px;

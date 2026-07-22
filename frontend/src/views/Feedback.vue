@@ -99,7 +99,7 @@ async function submitFeedback() {
   padding: 14px 16px; background: white;
   position: sticky; top: 0; z-index: 30; cursor: pointer;
 }
-.back-btn { color: #667eea; font-weight: 600; font-size: 14px; }
+.back-btn { color: var(--color-accent); font-weight: 600; font-size: 14px; }
 .header h2 { font-size: 17px; margin: 0; color: #333; }
 .content { padding: 14px 16px; }
 .card {
@@ -112,7 +112,7 @@ async function submitFeedback() {
 .faq-item:last-child { border-bottom: none; }
 .faq-q { display: flex; justify-content: space-between; align-items: center; font-size: 14px; font-weight: 600; color: #444; }
 .faq-arrow { font-size: 10px; color: #ccc; transition: transform 0.2s; }
-.faq-arrow.open { transform: rotate(180deg); color: #667eea; }
+.faq-arrow.open { transform: rotate(180deg); color: var(--color-accent); }
 .faq-a { font-size: 13px; color: #888; line-height: 1.6; margin: 8px 0 0; padding-left: 0; }
 
 .field { margin-bottom: 14px; }
@@ -123,14 +123,14 @@ async function submitFeedback() {
   box-sizing: border-box; font-family: inherit;
   background: #fafbfd; transition: border-color 0.2s;
 }
-.field select:focus, .field input:focus, .field textarea:focus { border-color: #667eea; }
+.field select:focus, .field input:focus, .field textarea:focus { border-color: var(--color-accent); }
 .field textarea { resize: none; }
 .btn-submit {
-  width: 100%; background: linear-gradient(135deg, #667eea, #764ba2);
+  width: 100%; background: var(--gradient-accent);
   color: white; border: none; padding: 14px; border-radius: 14px;
   font-size: 15px; font-weight: 700; cursor: pointer;
 }
 .btn-submit:disabled { opacity: 0.5; }
-.msg { text-align: center; font-size: 13px; margin-top: 8px; color: #ff4757; }
-.msg.ok { color: #2ed573; }
+.msg { text-align: center; font-size: 13px; margin-top: 8px; color: var(--color-danger); }
+.msg.ok { color: var(--color-success); }
 </style>

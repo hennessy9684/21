@@ -107,7 +107,7 @@ onMounted(() => {
   padding: 14px 16px; background: white;
   position: sticky; top: 0; z-index: 30; cursor: pointer;
 }
-.back-btn { color: #667eea; font-weight: 600; font-size: 14px; }
+.back-btn { color: var(--color-accent); font-weight: 600; font-size: 14px; }
 .header h2 { font-size: 17px; margin: 0; color: #333; }
 .content { padding: 14px 16px; }
 .card {
@@ -137,7 +137,7 @@ onMounted(() => {
   border-radius: 50%; transition: 0.3s;
   box-shadow: 0 1px 4px rgba(0,0,0,0.15);
 }
-.toggle input:checked + .slider { background: #667eea; }
+.toggle input:checked + .slider { background: var(--color-accent); }
 .toggle input:checked + .slider::after { left: 23px; }
 
 .privacy-note { font-size: 12px; color: #aaa; margin-top: 10px; text-align: center; }
