@@ -2,6 +2,11 @@
   "name": "21day-security",
   "private": true,
   "scripts": {
-    "build": "cd frontend && npm install && npm run build && node -e \"require('fs').cpSync('dist','../dist',{recursive:true})\""
+    "build": "cd frontend && npm install && npm run build && node -e \"require('fs').cpSync('dist','../dist',{recursive:true})\"",
+    "deploy": "wrangler deploy",
+    "preview": "wrangler dev"
+  },
+  "devDependencies": {
+    "wrangler": "^4.113.0"
   }
 }
