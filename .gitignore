@@ -28,3 +28,9 @@ Thumbs.db
 # Secrets
 .env
 *.env.local
+
+# wrangler files
+.wrangler
+.dev.vars*
+!.dev.vars.example
+!.env.example
