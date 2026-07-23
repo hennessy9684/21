@@ -164,6 +164,13 @@ REST_FRAMEWORK = {
 # DRF Token auth
 INSTALLED_APPS += ['rest_framework.authtoken']
 
+# 阿里云短信认证配置（个人开发者可用，无需企业资质）
+# 签名和模板CODE从号码认证控制台的"赠送签名/模板"页面获取
+SMS_ACCESS_KEY_ID = os.environ.get('SMS_ACCESS_KEY_ID', '')
+SMS_ACCESS_KEY_SECRET = os.environ.get('SMS_ACCESS_KEY_SECRET', '')
+SMS_SIGN_NAME = os.environ.get('SMS_SIGN_NAME', '')
+SMS_TEMPLATE_CODE = os.environ.get('SMS_TEMPLATE_CODE', '')
+
 # 登录重定向
 LOGIN_URL = '/manage/signin/'
 LOGIN_REDIRECT_URL = '/admin/dashboard/'

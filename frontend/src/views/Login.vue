@@ -97,10 +97,10 @@ async function handleSendCode() {
   codeSending.value = true
   try {
     const res = await sendCode(regForm.phone, 'register')
-    success.value = `验证码已发送：${res.data.code}`
+    success.value = res.data.message || '验证码已发送，请查看手机短信'
     startCountdown()
   } catch (e) {
-    regError.value = '发送失败，请重试'
+    regError.value = e.response?.data?.error || '发送失败，请重试'
   }
   codeSending.value = false
 }

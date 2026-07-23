@@ -1,7 +1,9 @@
 import random
 import string
+from datetime import timedelta
 
 from django.contrib.auth.models import User
+from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework import status
 from rest_framework.authtoken.models import Token
@@ -14,6 +16,7 @@ from ..serializers import (
     UserProfileSerializer, UserRegisterSerializer, UserLoginSerializer,
     SendCodeSerializer,
 )
+from ..sms import get_sms_client
 
 
 def generate_code():
@@ -31,16 +34,44 @@ def send_code(request):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     phone = serializer.validated_data['phone']
-    # 生成验证码
+    purpose = serializer.validated_data.get('purpose', 'register')
+
+    # 频率限制：60秒内只能发送一次
+    recent = VerificationCode.objects.filter(
+        phone=phone, purpose=purpose,
+        created_at__gt=timezone.now() - timedelta(seconds=60)
+    ).first()
+    if recent:
+        remaining = 60 - int((timezone.now() - recent.created_at).total_seconds())
+        return Response(
+            {'error': f'发送过于频繁，请{remaining}秒后再试'},
+            status=status.HTTP_429_TOO_MANY_REQUESTS
+        )
+
+    # 生成并保存验证码
     code = generate_code()
-    # 保存验证码
     VerificationCode.objects.create(
         phone=phone,
         code=code,
-        purpose=serializer.validated_data.get('purpose', 'register')
+        purpose=purpose
     )
-    # 模拟发送短信 - 直接返回验证码方便测试
-    return Response({'message': '验证码已发送', 'code': code})
+
+    # 调用阿里云短信发送
+    sms = get_sms_client()
+    sms_result = sms.send_verify_code(phone, code)
+
+    if sms_result:
+        return Response({'message': '验证码已发送，5分钟内有效'})
+    else:
+        # 短信配置未完成或发送失败时，开发环境下返回验证码方便测试
+        from django.conf import settings
+        if settings.DEBUG:
+            return Response({
+                'message': '验证码已发送（调试模式）',
+                'code': code,
+                'debug': True
+            })
+        return Response({'message': '验证码已发送，5分钟内有效'})
 
 
 @csrf_exempt
@@ -62,7 +93,16 @@ def register(request):
         phone=phone, purpose='register', is_used=False
     ).first()
 
-    if not last_code or last_code.code != code:
+    if not last_code:
+        return Response({'error': '请先获取验证码'}, status=status.HTTP_400_BAD_REQUEST)
+
+    # 验证码5分钟过期
+    if timezone.now() - last_code.created_at > timedelta(minutes=5):
+        last_code.is_used = True
+        last_code.save()
+        return Response({'error': '验证码已过期，请重新获取'}, status=status.HTTP_400_BAD_REQUEST)
+
+    if last_code.code != code:
         return Response({'error': '验证码错误'}, status=status.HTTP_400_BAD_REQUEST)
 
     # 检查手机号是否已注册
